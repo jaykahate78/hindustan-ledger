@@ -5,6 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>Hindustan Ledger - Accounting Suite</title>
   <link rel="stylesheet" href="css/style.css">
+<style>
+  .workspace-quick-nav{max-width:1200px;margin:22px auto 16px;padding:0 16px}
+  .workspace-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin:0 0 13px}
+  .workspace-heading h2{margin:0;font-size:19px;color:#102a56;font-weight:750}
+  .workspace-heading p{margin:0;color:#64748b;font-size:12px}
+  .workspace-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+  .workspace-card{display:flex;align-items:center;gap:14px;padding:16px 18px;border:1px solid #dbe5f2;border-radius:14px;background:#fff;text-decoration:none;color:#102a56;min-width:0;box-shadow:0 2px 6px rgba(16,42,86,.035);transition:box-shadow .17s,border-color .17s,transform .17s}
+  .workspace-card:hover,.workspace-card:focus-visible{border-color:#2563eb;box-shadow:0 8px 24px rgba(37,99,235,.11);transform:translateY(-1px)}
+  .workspace-icon{width:44px;height:44px;flex:0 0 44px;display:grid;place-items:center;border-radius:11px;background:#eaf1ff;color:#2158c8;font-size:24px}
+  .workspace-icon.pos{background:#fff1e7;color:#b55608}
+  .workspace-icon.account{background:#ecfdf5;color:#047857}
+  .workspace-copy{display:flex;flex:1;flex-direction:column;gap:3px;min-width:0}
+  .workspace-copy strong{font-size:14px;font-weight:750;line-height:1.4}
+  .workspace-copy span{color:#64748b;font-size:11px;line-height:1.55}
+  .workspace-chevron{font-size:19px;color:#94a3b8}
+  @media(max-width:850px){.workspace-grid{grid-template-columns:1fr}.workspace-quick-nav{margin:16px auto}.workspace-card{padding:13px 16px}}
+</style>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 </head>
@@ -28,8 +46,30 @@
       </div>
     </header>
 
+    <!-- Main workspace navigation: accounting and operations are intentionally separate pages. -->
+    <section class="workspace-quick-nav" aria-label="Business modules">
+      <div class="workspace-heading"><h2>Business Operations</h2><p>Select a module to open its workspace</p></div>
+      <div class="workspace-grid">
+        <a class="workspace-card" href="/operations.html#pipes" aria-label="Open Hindustan Pipes Manufacturing and Inventory">
+          <span class="workspace-icon" aria-hidden="true">▦</span>
+          <span class="workspace-copy"><strong>Hindustan Pipes</strong><span>Production, Inventory, Curing, Bundles &amp; Analytics</span></span>
+          <span class="workspace-chevron" aria-hidden="true">→</span>
+        </a>
+        <a class="workspace-card" href="/operations.html#pos" aria-label="Open BBQ Pav Bhaji POS and kitchen">
+          <span class="workspace-icon pos" aria-hidden="true">▤</span>
+          <span class="workspace-copy"><strong>BBQ Pav Bhaji POS</strong><span>Menu, Multi-item Orders, Kitchen Queue &amp; Alerts</span></span>
+          <span class="workspace-chevron" aria-hidden="true">→</span>
+        </a>
+        <a class="workspace-card" href="#accounting-section" aria-label="Jump to accounting ledger">
+          <span class="workspace-icon account" aria-hidden="true">₹</span>
+          <span class="workspace-copy"><strong>Accounting &amp; Ledger</strong><span>Company-wise Accounts, Vouchers &amp; History</span></span>
+          <span class="workspace-chevron" aria-hidden="true">↓</span>
+        </a>
+      </div>
+    </section>
+
     <!-- Main Navigation Bar -->
-    <nav class="tabs-nav">
+    <nav class="tabs-nav" id="accounting-section">
       <button class="tab-btn" data-tab="tab-balances">Account Balances</button>
       <button class="tab-btn active" data-tab="tab-vouchers">Voucher / Transactions</button>
       <button class="tab-btn" data-tab="tab-ledgers">Customer & Supplier Setup</button>
