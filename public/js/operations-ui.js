@@ -57,4 +57,5 @@ el('menuForm').onsubmit=e=>{e.preventDefault();action(async()=>{await api('pos/m
 el('orderForm').onsubmit=e=>{e.preventDefault();action(async()=>{if(!state.cart.length)throw Error('Add an item to the cart');await api('pos/orders',{method:'POST',body:JSON.stringify({channel:el('orderChannel').value,table_label:el('tableLabel').value,items:state.cart})});notify('Order sent to kitchen');state.cart=[];el('orderForm').reset();await pos()})};
 el('jobForm').onsubmit=e=>{e.preventDefault();action(async()=>{await api('pipes/jobs',{method:'POST',body:JSON.stringify({product_id:Number(el('jobProduct').value),quantity:Number(el('jobQuantity').value),machine_label:el('jobMachine').value,die_label:el('jobDie').value,operator_note:el('jobNote').value})});notify('Fabrication job created');el('jobForm').reset();await pipes()})};
 el('goodsForm').onsubmit=e=>{e.preventDefault();action(async()=>{await api('pipes/finished-goods',{method:'POST',body:JSON.stringify({sku:el('goodsSku').value,name:el('goodsName').value,category:el('goodsCategory').value})});notify('SKU saved');el('goodsForm').reset();await pipes()})};
-action(pipes);
+if(window.location.hash==='#pos')el('posTab').click();else el('pipesTab').click();
+window.addEventListener('hashchange',()=>{if(window.location.hash==='#pos')el('posTab').click();else if(window.location.hash==='#pipes')el('pipesTab').click()});
