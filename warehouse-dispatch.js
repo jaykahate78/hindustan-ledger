@@ -27,7 +27,7 @@ module.exports=function attachDispatch(router,pool){
   const id=await org(pool);
   const r=await pool.query(`SELECT w.id AS lot_id,w.lot_code,p.diameter_mm,p.end_type,z.name AS zone,w.quantity AS received,
   COALESCE((SELECT SUM(b.pipe_quantity) FROM warehouse_bundles b JOIN warehouse_bundle_dispatches d ON d.bundle_id=b.id WHERE b.lot_id=w.id),0)::int AS dispatched,
-  (w.quantity-COALESCE((SELECT SUM(b.pipe_quantity) FROM warehouse_bundles b JOIN warehouse_bundle_dispatches d ON d.bundle_id=b.id WHERE b.lot_id=w.id),0))::int AS available
+  (w.quantity-COALESCE((SELECT SUM(b.pipe_quantity) FROM warehouse_bundles b JOIN warehouse_bundle_dispatches d ON d.bundle_id=b.id WHERE b.lot_id=w.id),0)+COALESCE((SELECT SUM(rb.pipe_quantity) FROM warehouse_bundle_returns r JOIN warehouse_bundles rb ON rb.id=r.restock_bundle_id WHERE rb.lot_id=w.id AND r.status='ACCEPTED'),0))::int AS available
   FROM warehouse_lots w JOIN warehouse_zones z ON z.id=w.zone_id JOIN production_batches pb ON pb.id=w.batch_id JOIN pipe_products p ON p.id=pb.product_id
   WHERE w.organization_id=$1 ORDER BY w.id DESC`,[id]);res.json(r.rows);
  }));
