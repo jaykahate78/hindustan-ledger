@@ -200,5 +200,6 @@ module.exports = function operations(pool, auth) {
   }));
   require('./advanced-operations').attach(router,pool);
   require('./warehouse-dispatch')(router,pool);
+  require('./warehouse-returns')(router,pool);
   return router;
 };
