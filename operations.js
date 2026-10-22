@@ -199,5 +199,6 @@ module.exports = function operations(pool, auth) {
     }catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
   }));
   require('./advanced-operations').attach(router,pool);
+  require('./warehouse-dispatch')(router,pool);
   return router;
 };
