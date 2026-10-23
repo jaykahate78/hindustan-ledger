@@ -205,5 +205,6 @@ module.exports = function operations(pool, auth) {
   require('./warehouse-returns')(router,pool);
   require('./pipes-procurement')(router,pool);
   require('./pipes-finance')(router,pool);
+  require('./pos-billing')(router,pool);
   return router;
 };
