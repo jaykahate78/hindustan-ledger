@@ -160,6 +160,15 @@ module.exports = function operations(pool, auth) {
     const r=await pool.query('INSERT INTO pos_menu_items(organization_id,name,category,price) VALUES($1,$2,$3,$4) RETURNING *',[id,name,category,money(price)]);
     res.status(201).json(r.rows[0]);
   }));
+  router.put('/pos/menu/:id/availability',wrap(async(req,res)=>{
+    if(typeof req.body.available!=='boolean')throw fail(400,'Menu availability must be true or false');
+    const id=await orgId(pool,posOrg);
+    const itemId=Number(req.params.id);
+    if(!Number.isSafeInteger(itemId)||itemId<1)throw fail(400,'Invalid menu item');
+    const result=await pool.query('UPDATE pos_menu_items SET available=$1 WHERE organization_id=$2 AND id=$3 RETURNING id,name,category,price,available',[req.body.available,id,itemId]);
+    if(!result.rowCount)throw fail(404,'Menu item not found');
+    res.json(result.rows[0]);
+  }));
   router.get('/pos/orders',wrap(async(req,res)=>{
     const id=await orgId(pool,posOrg);
     res.json((await pool.query("SELECT o.*,COALESCE(json_agg(json_build_object('name',i.name_snapshot,'quantity',i.quantity,'price',i.unit_price)) FILTER(WHERE i.id IS NOT NULL),'[]'::json) AS items FROM pos_orders o LEFT JOIN pos_order_items i ON i.order_id=o.id AND i.organization_id=o.organization_id WHERE o.organization_id=$1 GROUP BY o.id ORDER BY o.id DESC LIMIT 100",[id])).rows);
