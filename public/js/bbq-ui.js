@@ -1,0 +1,27 @@
+'use strict';
+const root='/api/operations/';
+const el=id=>document.getElementById(id);
+const state={menu:[],cart:[],kitchenLastId:null,kitchenSoundEnabled:false,audioContext:null};
+function notify(message,error=false){const n=el('notice');n.textContent=message;n.style.display='block';n.className=error?'danger':'';window.scrollTo({top:0,behavior:'smooth'});}
+async function api(path,options={}){const r=await fetch(root+path,{headers:{'Content-Type':'application/json'},...options});let d;try{d=await r.json()}catch{throw Error('Invalid server response')}if(!r.ok)throw Error(d.error||'Server error');return d}
+async function action(fn){try{await fn()}catch(e){notify(e.message,true)}}
+function td(tr,value){const x=document.createElement('td');x.textContent=String(value??'');tr.appendChild(x);return x}
+function renderRows(id,records,render){const target=el(id);target.replaceChildren();if(!records.length){const tr=document.createElement('tr');td(tr,'No records yet');target.appendChild(tr);return}for(const a of records){const tr=document.createElement('tr');render(tr,a);target.appendChild(tr)}}
+function fill(id,rows,label){const x=el(id);x.replaceChildren();for(const item of rows){const opt=document.createElement('option');opt.value=item.id;opt.textContent=label(item);x.appendChild(opt)}}
+function kitchenBeep(){if(!state.kitchenSoundEnabled||!state.audioContext)return;try{const ctx=state.audioContext,osc=ctx.createOscillator(),gain=ctx.createGain();osc.type='sine';osc.frequency.value=880;gain.gain.setValueAtTime(0.05,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+.3);osc.connect(gain);gain.connect(ctx.destination);osc.start();osc.stop(ctx.currentTime+.3)}catch(e){console.warn('Audio alert unavailable')}}
+async function pos(){const [menu,orders]=await Promise.all([api('pos/menu'),api('pos/orders')]);const newest=orders.reduce((max,o)=>Math.max(max,Number(o.id)||0),0);if(state.kitchenLastId!==null&&newest>state.kitchenLastId){const recent=orders.filter(o=>Number(o.id)>state.kitchenLastId&&o.status==='NEW').length;if(recent){kitchenBeep();el('kitchenLive').textContent=recent+' new kitchen order'+(recent===1?'':'s')+' received';el('kitchenLive').style.fontWeight='bold'}}if(state.kitchenLastId===null||newest>state.kitchenLastId)state.kitchenLastId=newest;state.menu=menu;renderRows('menu',menu,(t,m)=>{td(t,m.name);td(t,m.category);td(t,'₹'+m.price)});
+ fill('orderItem',menu.filter(x=>x.available),x=>x.name+' ₹'+x.price);showCart();
+ renderRows('orders',orders,(t,o)=>{td(t,o.order_no);td(t,(o.items||[]).map(x=>x.quantity+' × '+x.name).join(', '));td(t,o.channel);td(t,'₹'+o.total_amount);td(t,o.status);const c=td(t,'');
+ const next={NEW:'PREPARING',PREPARING:'READY',READY:'COMPLETED'}[o.status];if(next){const b=document.createElement('button');b.textContent='Mark '+next;b.addEventListener('click',()=>action(async()=>{await api('pos/orders/'+o.id+'/status',{method:'PATCH',body:JSON.stringify({status:next})});notify('Order status updated');await pos()}));c.appendChild(b)}})}
+
+function showCart(){
+ const tbody=el('cartItems');tbody.replaceChildren();let cents=0;
+ for(const line of state.cart){const m=state.menu.find(x=>Number(x.id)===line.menu_item_id);if(!m)continue;const cost=Math.round(Number(m.price)*100)*line.quantity;cents+=cost;const tr=document.createElement('tr');td(tr,m.name);td(tr,line.quantity);td(tr,'₹'+(cost/100).toFixed(2));const cell=td(tr,'');const b=document.createElement('button');b.type='button';b.className='secondary';b.textContent='Remove';b.onclick=()=>{state.cart=state.cart.filter(x=>x!==line);showCart()};cell.appendChild(b);tbody.appendChild(tr)}
+ el('cartTotal').textContent='Total: ₹'+(cents/100).toFixed(2);
+}
+el('addCartItem').onclick=()=>{const menu_item_id=Number(el('orderItem').value),quantity=Number(el('orderQuantity').value);if(!Number.isSafeInteger(quantity)||quantity<1||quantity>500){notify('Enter a valid quantity (1-500)',true);return}if(!state.menu.some(m=>Number(m.id)===menu_item_id&&m.available)){notify('Choose an available item',true);return}const existing=state.cart.find(x=>x.menu_item_id===menu_item_id);if(existing)existing.quantity+=quantity;else state.cart.push({menu_item_id,quantity});showCart()};
+el('enableKitchenAlerts').onclick=async()=>{try{const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)throw Error('Audio is not supported in this browser');state.audioContext=state.audioContext||new Audio();await state.audioContext.resume();state.kitchenSoundEnabled=true;el('enableKitchenAlerts').textContent='Sound enabled';el('kitchenLive').textContent='Sound alerts on • checks every 15 sec';kitchenBeep()}catch(e){notify('Kitchen audio unavailable: '+e.message,true)}};
+window.setInterval(()=>{pos().catch(e=>{el('kitchenLive').textContent='Live sync unavailable: '+e.message})},15000);
+el('menuForm').onsubmit=e=>{e.preventDefault();action(async()=>{await api('pos/menu',{method:'POST',body:JSON.stringify({name:el('dishName').value,category:el('dishCategory').value,price:Number(el('dishPrice').value)})});notify('Menu item saved');el('menuForm').reset();await pos()})};
+el('orderForm').onsubmit=e=>{e.preventDefault();action(async()=>{if(!state.cart.length)throw Error('Add an item to the cart');await api('pos/orders',{method:'POST',body:JSON.stringify({channel:el('orderChannel').value,table_label:el('tableLabel').value,items:state.cart})});notify('Order sent to kitchen');state.cart=[];el('orderForm').reset();await pos()})};
+action(pos);
