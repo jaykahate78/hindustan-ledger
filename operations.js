@@ -13,9 +13,14 @@ module.exports = function operations(pool, auth) {
       req.body.organization_id=r.rows[0].id;
       req.params.orgId=r.rows[0].id;
       req.query.org_id=String(r.rows[0].id);
-      await auth.requireOrg(req,res,()=>auth.requireRole(
-        (name===posOrg && req.method==='PATCH')?'KITCHEN':(req.method==='GET'?'KITCHEN':'OPERATOR')
-      )(req,res,next));
+      await auth.requireOrg(req,res,()=>{
+        if(name===posOrg){
+          const role=req.user.is_owner?'OWNER':req.orgRole;
+          if(!require('./pos-permissions').canPos(req.method,req.path,role))return res.status(403).json({error:'Not authorized for this POS function'});
+          return next();
+        }
+        return auth.requireRole(req.method==='GET'?'KITCHEN':'OPERATOR')(req,res,next);
+      });
     }catch(e){next(e)}
   });
   const wrap = fn => (req,res) => Promise.resolve(fn(req,res)).catch(e => {
@@ -148,6 +153,15 @@ module.exports = function operations(pool, auth) {
   router.get('/pipes/warehouse',wrap(async(req,res)=>{
     const id=await orgId(pool,pipeOrg);
     res.json((await pool.query('SELECT w.id,w.lot_code,w.quantity,z.name AS zone,b.batch_code,p.diameter_mm,p.end_type FROM warehouse_lots w JOIN warehouse_zones z ON z.id=w.zone_id JOIN production_batches b ON b.id=w.batch_id JOIN pipe_products p ON p.id=b.product_id WHERE w.organization_id=$1 ORDER BY w.id DESC',[id])).rows);
+  }));
+  router.get('/pos/session',wrap(async(req,res)=>{
+    const role=req.user.is_owner?'OWNER':req.orgRole;
+    res.json({role,...require('./pos-permissions').posCapabilities(role)});
+  }));
+  router.get('/pos/kitchen-orders',wrap(async(req,res)=>{
+    const id=await orgId(pool,posOrg);
+    const r=await pool.query("SELECT o.id,o.order_no,o.channel,o.table_label,o.status,o.created_at,COALESCE(json_agg(json_build_object('name',i.name_snapshot,'quantity',i.quantity)) FILTER(WHERE i.id IS NOT NULL),'[]'::json) AS items FROM pos_orders o LEFT JOIN pos_order_items i ON i.order_id=o.id AND i.organization_id=o.organization_id WHERE o.organization_id=$1 GROUP BY o.id ORDER BY o.id DESC LIMIT 100",[id]);
+    res.json(r.rows);
   }));
   router.get('/pos/menu',wrap(async(req,res)=>{
     const id=await orgId(pool,posOrg);
