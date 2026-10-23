@@ -100,13 +100,15 @@ module.exports = function operations(pool, auth) {
       if(!recipe.length) throw fail(400,'Configure a per-pipe material recipe before production');
       const code='PB-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
       const batch=(await client.query("INSERT INTO production_batches(organization_id,product_id,batch_code,quantity,stage,notes) VALUES($1,$2,$3,$4,'DRY_CURING',$5) RETURNING *",[id,product.id,code,qty,String(req.body.notes||'').slice(0,500)])).rows[0];
-      for(const r of recipe){
-        const used=qty3(Number(r.qty_per_pipe)*qty);
+      const usage=require('./material-consumption').consumption(recipe,req.body.actual_materials,qty);
+      for(const r of usage){
+        const used=r.actual_quantity;
         if(used<=0) throw fail(400,'Material recipe quantity too small');
         const stock=await client.query('UPDATE raw_materials SET quantity_on_hand=quantity_on_hand-$1 WHERE id=$2 AND organization_id=$3 AND quantity_on_hand >= $1 RETURNING id',[used,r.raw_material_id,id]);
         if(!stock.rowCount) throw fail(400,'Insufficient inventory for material '+r.raw_material_id);
         await client.query('INSERT INTO raw_material_movements(organization_id,raw_material_id,quantity_delta,reason,reference) VALUES($1,$2,$3,$4,$5)',[id,r.raw_material_id,-used,'PRODUCTION',code]);
         await client.query('INSERT INTO batch_material_usage(organization_id,batch_id,raw_material_id,quantity_used) VALUES($1,$2,$3,$4)',[id,batch.id,r.raw_material_id,used]);
+        await client.query('INSERT INTO pipe_batch_consumption_variances(organization_id,batch_id,raw_material_id,estimated_quantity,actual_quantity) VALUES($1,$2,$3,$4,$5)',[id,batch.id,r.raw_material_id,r.estimated_quantity,used]);
       }
       await client.query("INSERT INTO batch_stage_history(organization_id,batch_id,to_stage) VALUES($1,$2,'DRY_CURING')",[id,batch.id]);
       await client.query('COMMIT');res.status(201).json(batch);
