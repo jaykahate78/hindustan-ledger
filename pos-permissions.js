@@ -4,10 +4,10 @@
 function canPos(method,path,role){
  if(role==='OWNER')return true;
  if(!['ADMIN','OPERATOR','KITCHEN'].includes(role))return false;
- if(method==='GET'&&(path==='/pos/session'||path==='/pos/orders'))return true;
+ if(method==='GET'&&(path==='/pos/session'||path==='/pos/kitchen-orders'))return true;
  if(method==='PATCH'&&/^\/pos\/orders\/\d+\/status$/.test(path))return role==='KITCHEN'||role==='ADMIN';
  if(role==='KITCHEN')return false;
- if(method==='GET'&&(path==='/pos/menu'||/^\/pos\/orders\/\d+\/receipt$/.test(path)))return true;
+ if(method==='GET'&&(path==='/pos/orders'||path==='/pos/menu'||/^\/pos\/orders\/\d+\/receipt$/.test(path)))return true;
  if(method==='POST'&&path==='/pos/orders')return true;
  if(method==='PATCH'&&/^\/pos\/orders\/\d+\/payment$/.test(path))return true;
  if(role==='ADMIN'){
