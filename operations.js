@@ -207,5 +207,6 @@ module.exports = function operations(pool, auth) {
   require('./pipes-finance')(router,pool);
   require('./pos-billing')(router,pool);
   require('./pipes-sales')(router,pool);
+  require('./pipes-sales-dispatch')(router,pool);
   return router;
 };
