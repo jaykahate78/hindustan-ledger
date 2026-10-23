@@ -160,7 +160,7 @@ module.exports = function operations(pool, auth) {
   }));
   router.get('/pos/kitchen-orders',wrap(async(req,res)=>{
     const id=await orgId(pool,posOrg);
-    const r=await pool.query("SELECT o.id,o.order_no,o.channel,o.table_label,o.status,o.created_at,COALESCE(json_agg(json_build_object('name',i.name_snapshot,'quantity',i.quantity)) FILTER(WHERE i.id IS NOT NULL),'[]'::json) AS items FROM pos_orders o LEFT JOIN pos_order_items i ON i.order_id=o.id AND i.organization_id=o.organization_id WHERE o.organization_id=$1 GROUP BY o.id ORDER BY o.id DESC LIMIT 100",[id]);
+    const r=await pool.query("SELECT o.id,o.order_no,o.channel,o.table_label,o.status,o.created_at,COALESCE(json_agg(json_build_object('name',i.name_snapshot,'quantity',i.quantity)) FILTER(WHERE i.id IS NOT NULL),'[]'::json) AS items FROM pos_orders o LEFT JOIN pos_order_items i ON i.order_id=o.id AND i.organization_id=o.organization_id WHERE o.organization_id=$1 AND o.payment_method IN ('CASH','UPI','CARD') GROUP BY o.id ORDER BY o.id DESC LIMIT 100",[id]);
     res.json(r.rows);
   }));
   router.get('/pos/menu',wrap(async(req,res)=>{
@@ -188,7 +188,10 @@ module.exports = function operations(pool, auth) {
     res.json((await pool.query("SELECT o.*,COALESCE(json_agg(json_build_object('name',i.name_snapshot,'quantity',i.quantity,'price',i.unit_price)) FILTER(WHERE i.id IS NOT NULL),'[]'::json) AS items FROM pos_orders o LEFT JOIN pos_order_items i ON i.order_id=o.id AND i.organization_id=o.organization_id WHERE o.organization_id=$1 GROUP BY o.id ORDER BY o.id DESC LIMIT 100",[id])).rows);
   }));
   router.post('/pos/orders',wrap(async(req,res)=>{
-    const items=req.body.items,channel=req.body.channel;
+    const items=req.body.items,channel=req.body.channel,method=req.body.payment_method;
+    if(!['CASH','UPI','CARD'].includes(method)||req.body.payment_confirmed!==true)throw fail(400,'Confirm payment and choose Cash, UPI or Card before sending to kitchen');
+    const paymentReference=String(req.body.payment_reference||'').trim();
+    if(paymentReference.length>120)throw fail(400,'Payment reference too long');
     if(!Array.isArray(items)||!items.length||items.length>50||!['DINE_IN','TAKEAWAY','ONLINE_MANUAL'].includes(channel)) throw fail(400,'Valid channel and 1–50 items required');
     const client=await pool.connect();
     try{
@@ -205,7 +208,7 @@ module.exports = function operations(pool, auth) {
       }
       if(totalCents>1000000000) throw fail(400,'Order total too high');
       const no='POS-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
-      const order=(await client.query('INSERT INTO pos_orders(organization_id,order_no,channel,table_label,subtotal,total_amount,payment_method,notes) VALUES($1,$2,$3,$4,$5,$5,$6,$7) RETURNING *',[id,no,channel,String(req.body.table_label||'').slice(0,40),totalCents/100,'UNPAID',String(req.body.notes||'').slice(0,500)])).rows[0];
+      const order=(await client.query('INSERT INTO pos_orders(organization_id,order_no,channel,table_label,subtotal,total_amount,payment_method,notes,payment_reference,payment_confirmed_at) VALUES($1,$2,$3,$4,$5,$5,$6,$7,$8,now()) RETURNING *',[id,no,channel,String(req.body.table_label||'').slice(0,40),totalCents/100,method,String(req.body.notes||'').slice(0,500),paymentReference])).rows[0];
       for(const l of lines) await client.query('INSERT INTO pos_order_items(organization_id,order_id,menu_item_id,name_snapshot,quantity,unit_price,line_total) VALUES($1,$2,$3,$4,$5,$6,$7)',[id,order.id,l.menu.id,l.menu.name,l.qty,l.menu.price,l.lineCents/100]);
       await client.query('COMMIT');res.status(201).json(order);
     }catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
