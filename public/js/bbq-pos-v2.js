@@ -29,4 +29,4 @@ el('menuForm').onsubmit=e=>{e.preventDefault();task(async()=>{await api('pos/men
 el('enableKitchenAlerts').onclick=()=>task(async()=>{const A=window.AudioContext||window.webkitAudioContext;if(!A)throw Error('Audio not supported');state.audio=state.audio||new A();await state.audio.resume();state.sound=true;el('enableKitchenAlerts').textContent='Sound Enabled';beep()});
 el('refreshKitchen').onclick=()=>task(refresh);
 setInterval(()=>{if(!state.busy)refresh().catch(e=>{el('kitchenLive').textContent='Sync error: '+e.message})},15000);
-api('pos/session').then(session=>{if(session.view==='kitchen'){window.location.replace('/bbq-kitchen.html');return}if(!session.can_manage_menu)document.querySelectorAll('[data-view="menu"]').forEach(b=>b.remove());return refresh()}).catch(e=>notice(e.message,true));
+api('pos/session').then(session=>{if(session.view==='kitchen'){window.location.replace('/bbq-kitchen.html');return}if(!session.can_manage_menu)document.querySelectorAll('[data-view="menu"]').forEach(b=>b.remove());if(!session.can_kitchen){document.querySelectorAll('[data-view="kitchen"]').forEach(b=>b.remove());}return refresh()}).catch(e=>notice(e.message,true));
