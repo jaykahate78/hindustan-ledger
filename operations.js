@@ -202,5 +202,6 @@ module.exports = function operations(pool, auth) {
   require('./warehouse-dispatch')(router,pool);
   require('./warehouse-returns')(router,pool);
   require('./pipes-procurement')(router,pool);
+  require('./pipes-finance')(router,pool);
   return router;
 };
