@@ -1,0 +1,7 @@
+'use strict';
+const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const vm=require('node:vm');
+const {consumption}=require('../material-consumption');
+test('actual iron gauge quantities override estimated recipe while preserving variances',()=>{const r=consumption([{raw_material_id:8,qty_per_pipe:2},{raw_material_id:10,qty_per_pipe:1.5}],[{raw_material_id:8,quantity_used:5.125},{raw_material_id:10,quantity_used:3.5}],2);assert.deepEqual(r,[{raw_material_id:8,estimated_quantity:4,actual_quantity:5.125},{raw_material_id:10,estimated_quantity:3,actual_quantity:3.5}])});
+test('recipe estimated quantities used when actual not provided',()=>assert.equal(consumption([{raw_material_id:1,qty_per_pipe:1.25}],undefined,2)[0].actual_quantity,2.5));
+test('actual quantities must include every specified recipe ingredient',()=>{assert.throws(()=>consumption([{raw_material_id:1,qty_per_pipe:1},{raw_material_id:2,qty_per_pipe:1}],[{raw_material_id:1,quantity_used:1}],1));assert.throws(()=>consumption([{raw_material_id:1,qty_per_pipe:1}],[{raw_material_id:5,quantity_used:1}],1));});
+test('paving and jointer stock and variance UI scripts parse',()=>{const a=fs.readFileSync(require('node:path').join(__dirname,'../public/js/pipes-ui.js'),'utf8');assert.doesNotThrow(()=>new vm.Script(a));assert.match(a,/finished-goods.*movement/);assert.match(a,/material-variances/);});
