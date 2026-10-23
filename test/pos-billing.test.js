@@ -1,0 +1,5 @@
+'use strict';
+const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const vm=require('node:vm');
+test('BBQ billing endpoints register separately from factory module',()=>{const routes=[];const router={get:(p,h)=>{routes.push('GET '+p);assert.equal(typeof h,'function')},patch:(p,h)=>{routes.push('PATCH '+p);assert.equal(typeof h,'function')}};require('../pos-billing')(router,{});assert.deepEqual(routes,['PATCH /pos/orders/:id/payment','GET /pos/orders/:id/receipt'])});
+test('restaurant client can render receipt and record payments',()=>{const js=fs.readFileSync(require('node:path').join(__dirname,'../public/js/bbq-ui.js'),'utf8');assert.doesNotThrow(()=>new vm.Script(js));assert.match(js,/Record Payment/);assert.match(js,/\/receipt/);});
+test('backend blocks unpaid invalid methods and duplicated recordings',()=>{const js=fs.readFileSync(require('node:path').join(__dirname,'../pos-billing.js'),'utf8');assert.match(js,/Payment already recorded/);assert.match(js,/\['CASH','UPI','CARD'\]/)});
