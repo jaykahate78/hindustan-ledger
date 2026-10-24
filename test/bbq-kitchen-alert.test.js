@@ -10,6 +10,9 @@ function fixture(initialOrders,autoplayAllowed=true){
  const elements=new Map();
  const spoken=[];
  const tones=[];
+ const pitches=[];
+ const gains=[];
+ const voiceDelays=[];
  let orders=initialOrders;
  const storage=new Map();
  const callbacks=[];
@@ -29,8 +32,8 @@ function fixture(initialOrders,autoplayAllowed=true){
  class AudioContextMock{
   constructor(){this.state=autoplayAllowed?'running':'suspended';this.currentTime=3;this.destination={}}
   resume(){if(autoplayAllowed)this.state='running';return Promise.resolve()}
-  createOscillator(){return {type:'',frequency:{value:0},connect(){},start(){tones.push('start')},stop(){}}}
-  createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){}}}
+  createOscillator(){const osc={type:'',frequency:{value:0},connect(){},start(){tones.push('start');pitches.push(osc.frequency.value)},stop(){}};return osc}
+  createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(value){gains.push(value)}},connect(){}}}
  }
  const synth={cancel(){},getVoices(){return [{lang:'en-IN'}]},speak(u){spoken.push(u.text)}};
  class Utterance{constructor(text){this.text=text}}
@@ -48,29 +51,34 @@ function fixture(initialOrders,autoplayAllowed=true){
   document,fetch,
   localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},
   setInterval(fn){timers.push(fn);return timers.length},
-  setTimeout(fn){return 1},clearTimeout(){},
+  setTimeout(fn,delay){if(delay===650)voiceDelays.push(fn);return 1},clearTimeout(){},
   console,Promise,Number,Math,Set,String,Array
  });
- return {context,elements,spoken,tones,timers,storage,callbacks,
+ return {context,elements,spoken,tones,pitches,gains,voiceDelays,timers,storage,callbacks,
+  flushVoice(){for(const fn of voiceDelays.splice(0))fn()},
   setOrders(x){orders=x},
   allowSound(){autoplayAllowed=true},
   async settle(){await new Promise(resolve=>setImmediate(resolve));await new Promise(resolve=>setImmediate(resolve))}
  };
 }
 const kot=(id,status='NEW')=>({id,order_no:'POS-TEST-'+id,channel:'TAKEAWAY',table_label:'',status,items:[{name:'Pav Bhaji',quantity:1}]});
-test('new KOT speaks New order received and triggers tone, but polling same order does not repeat',async()=>{
+test('new KOT plays three full-volume beeps then speaks once; repeated polling stays silent',async()=>{
  const f=fixture([kot(51)]);
  vm.runInContext(script,f.context);
  await f.settle();
- assert.deepEqual(f.spoken,['New order received']);
- assert.equal(f.tones.length,2,'two-tone notification');
+ f.flushVoice();
+ assert.deepEqual(f.spoken,['Attention kitchen, new order received']);
+ assert.equal(f.tones.length,3,'triple alert notification');
+ assert.deepEqual(f.pitches,[920,920,1250]);
+ assert.ok(f.gains.some(x=>Math.abs(x-.24)<.00001),'configured bell output at 100%');
  assert.match(f.elements.get('arrival').textContent,/New order received/);
  assert.equal(f.elements.get('newCount').textContent,1);
  f.timers[0]();await f.settle();
  assert.equal(f.spoken.length,1,'duplicate poll must stay silent');
  f.setOrders([kot(52),kot(51)]);f.timers[0]();await f.settle();
- assert.equal(f.spoken.length,2,'new order must alert');
- assert.equal(f.tones.length,4);
+ f.flushVoice();
+ assert.equal(f.spoken.length,2,'new order must alert once');
+ assert.equal(f.tones.length,6);
  assert.equal(f.storage.get('bbq.kitchen.lastNotifiedOrderId.v1'),'52');
  f.setOrders([kot(52,'PREPARING'),kot(51,'READY')]);f.timers[0]();await f.settle();
  assert.equal(f.spoken.length,2,'stage changes must not trigger a new-order alert');
@@ -85,8 +93,8 @@ test('autoplay-blocked kitchen clearly prompts activation and activation restore
  f.allowSound();
  await f.elements.get('sound').onclick();
  await f.settle();
- assert.equal(f.spoken.at(-1),'New order received','test sound reads requested phrase');
- assert.equal(f.tones.length,2,'tone after user gesture');
+ assert.equal(f.spoken.at(-1),'Attention kitchen, new order received','test sound reads selected phrase');
+ assert.equal(f.tones.length,3,'triple alert after user gesture');
  assert.match(f.elements.get('soundStatus').textContent,/Order sound: ON/);
 });
 test('existing latest order IDs are persisted to avoid repeat notifications on reload',async()=>{
@@ -94,6 +102,7 @@ test('existing latest order IDs are persisted to avoid repeat notifications on r
  vm.runInContext(script,f.context);
  await f.settle();
  assert.equal(f.storage.get('bbq.kitchen.lastNotifiedOrderId.v1'),'81');
+ f.flushVoice();
  assert.equal(f.spoken.length,1,'batch of two new orders gets one announcement');
  f.setOrders([kot(81),kot(80)]);
  f.timers[0]();await f.settle();
@@ -104,7 +113,10 @@ test('kitchen UI includes audio-unlock fallback and no prices or payment data',(
  assert.match(html,/id="soundStatus"/);
  assert.match(html,/id="arrival"/);
  assert.match(html,/id="sound"/);
- assert.match(script,/New order received/);
+ assert.match(script,/Attention kitchen, new order received/);
+ assert.match(html,/Triple Alert \(3 beeps\) at 100%/);
+ assert.match(script,/const ALERT_VOLUME=1;/);
+ assert.match(script,/TRIPLE_ALERT=\[\[920,0\],\[920,\.20\],\[1250,\.40\]\]/);
  assert.match(script,/SpeechSynthesisUtterance/);
  assert.match(script,/localStorage/);
  assert.match(script,/visibilitychange/);
