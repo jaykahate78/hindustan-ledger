@@ -11,7 +11,7 @@ input,select{display:block;width:100%;padding:11px;border:1px solid #cbd7e7;bord
 button.secondary{background:#edf3ff;color:#102a56}button:disabled{opacity:.45;cursor:not-allowed}
 .filters{display:flex;gap:7px;flex-wrap:wrap;margin-top:15px}.filters button{padding:8px 10px}.dishes{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:11px;margin-top:16px}
 .dish{display:flex;min-height:101px;flex-direction:column;justify-content:space-between;align-items:flex-start;text-align:left;background:#f8faff;color:#102a56;border:1px solid #dce6f3}
-.dish strong{font-size:14px}.dish span{color:#2563eb;font-size:14px}.dish:hover{border-color:#2563eb;background:#eef5ff}
+.dish strong{font-size:14px}.dish span{color:#2563eb;font-size:14px}.dish:hover{border-color:#2563eb;background:#eef5ff} .dish:disabled{opacity:.6;cursor:not-allowed;border-color:#f2d2c6;background:#fff8f5}.dish small{font-size:11px;color:#697a90}.dish .low{color:#b45309;font-weight:700}#stockNotice{color:#ad4b13;font-weight:650;margin:10px 0}
 .cart-line{display:flex;justify-content:space-between;align-items:center;padding:11px 0;gap:7px;border-bottom:1px solid #e8eef6}
 .cart-controls{display:flex;gap:8px;align-items:center}.cart-controls button{padding:5px 10px}.cart-name{font-size:13px;font-weight:650}
 .total{display:flex;justify-content:space-between;align-items:center;font-size:24px;font-weight:800;padding:22px 0}.full{width:100%}
@@ -23,7 +23,7 @@ footer{font-size:12px;color:#65788f;margin:17px 0}@media(max-width:860px){.split
 <section class="card"><h2>1. Select Items</h2><div class="row"><div><label for="orderChannel">Order Type</label><select id="orderChannel"><option value="DINE_IN">Dine In</option><option value="TAKEAWAY">Takeaway</option><option value="ONLINE_MANUAL">Online (manual)</option></select></div><div><label for="tableLabel">Table / Order Name</label><input id="tableLabel" maxlength="40" placeholder="Table 4"></div></div>
 <label for="dishSearch">Find Dish</label><input id="dishSearch" autocomplete="off" placeholder="Search items…"><div id="categoryFilters" class="filters"></div><div id="quickDishes" class="dishes"></div><p class="hint">Tap a dish to add it to the cart.</p></section>
 <section class="card"><h2>2. Cart & Payment</h2><div id="cartItems"></div><p id="emptyCart" class="hint">No items in cart.</p><div class="total"><span>Total</span><span id="cartTotal">₹0.00</span></div>
-<label for="paymentMethod">Payment Method</label><select id="paymentMethod"><option value="">Select payment</option><option value="CASH">Cash</option><option value="UPI">UPI</option><option value="CARD">Card</option></select>
+<p id="stockNotice" aria-live="polite"></p><label for="paymentMethod">Payment Method</label><select id="paymentMethod"><option value="">Select payment</option><option value="CASH">Cash</option><option value="UPI">UPI</option><option value="CARD">Card</option></select>
 <label for="paymentReference">Payment Reference (optional)</label><input id="paymentReference" maxlength="120" placeholder="UPI / card reference"><p class="hint">Confirm only after payment is received. No automatic gateway verification.</p>
 <button type="button" id="placeOrder" class="full" disabled>Confirm Payment & Send KOT</button><button type="button" id="clearCart" class="secondary full" style="margin-top:8px">Clear Cart</button>
 <div id="lastOrder" aria-live="polite"></div></section></div><footer>This cashier view does not include kitchen controls or admin reports. Receipt is not a GST invoice.</footer></main>
