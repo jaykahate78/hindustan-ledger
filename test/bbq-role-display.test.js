@@ -1,6 +1,21 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const {canPos,posCapabilities}=require('../pos-permissions');
-test('cashier cannot advance kitchen or change menu',()=>{assert.equal(canPos('PATCH','/pos/orders/15/status','OPERATOR'),false);assert.equal(canPos('PATCH','/pos/orders/15/payment','OPERATOR'),true);assert.equal(canPos('GET','/pos/kitchen-orders','OPERATOR'),false);assert.equal(posCapabilities('OPERATOR').view,'cashier')});
-test('kitchen cannot access billing, payments or prices',()=>{assert.equal(canPos('GET','/pos/orders','KITCHEN'),false);assert.equal(canPos('PATCH','/pos/orders/15/payment','KITCHEN'),false);assert.equal(canPos('PATCH','/pos/orders/15/status','KITCHEN'),true);assert.equal(canPos('GET','/pos/kitchen-orders','KITCHEN'),true);assert.equal(posCapabilities('KITCHEN').view,'kitchen')});
-test('billing page owns payment section and kitchen uses independent screen',()=>{const html=fs.readFileSync(path.join(__dirname,'../public/bbq.html'),'utf8'),kds=fs.readFileSync(path.join(__dirname,'../public/bbq-kitchen.html'),'utf8'),client=fs.readFileSync(path.join(__dirname,'../public/js/bbq-pos-v2.js'),'utf8');assert.match(html,/<section id="billing"[\s\S]*id="paymentMethod"[\s\S]*id="placeOrder"[\s\S]*<\/section>/);assert.doesNotMatch(html,/id="cashierPayments"/);assert.doesNotMatch(html,/id="payments"/);assert.doesNotMatch(kds,/Record Payment|cashierPayments|total_amount/);assert.match(client,/!session\.can_kitchen/);assert.match(client,/window\.location\.replace\('\/bbq-kitchen\.html'\)/)});
+test('cashier kitchen and admin have separate access',()=>{
+ assert.equal(posCapabilities('OPERATOR').view,'cashier');
+ assert.equal(posCapabilities('KITCHEN').view,'kitchen');
+ assert.equal(posCapabilities('ADMIN').view,'admin');
+ assert.equal(canPos('GET','/pos/admin/daily-report','OPERATOR'),false);
+ assert.equal(canPos('GET','/pos/admin/daily-report','KITCHEN'),false);
+ assert.equal(canPos('GET','/pos/admin/daily-report','ADMIN'),true);
+ assert.equal(canPos('GET','/pos/admin/daily-report','OWNER'),true);
+ assert.equal(canPos('GET','/pos/kitchen-orders','OPERATOR'),false);
+ assert.equal(canPos('PATCH','/pos/orders/15/status','KITCHEN'),true);
+});
+test('cashier screen has payment and KDS has no financial fields',()=>{
+ const html=fs.readFileSync(path.join(__dirname,'../public/bbq.html'),'utf8');
+ const kds=fs.readFileSync(path.join(__dirname,'../public/bbq-kitchen.html'),'utf8');
+ assert.ok(html.includes('id="paymentMethod"'));
+ assert.ok(!html.includes('cashierPayments')&&!html.includes('id="kitchen"'));
+ assert.ok(!kds.includes('total_amount')&&!kds.includes('Record Payment'));
+});
