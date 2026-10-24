@@ -77,6 +77,7 @@ function createAuth(pool){
   const canAccessPipes=rolesForUser.rows.some(r=>r.name==='Hindustan Pipes');
   const destinations={ADMIN:'/bbq-admin.html',OPERATOR:'/bbq.html',KITCHEN:'/bbq-kitchen.html'};
   if(bbq&&Object.prototype.hasOwnProperty.call(destinations,bbq.role)){
+   if(bbq.role==='ADMIN'&&canAccessPipes)return res.json({destination:'/',workspace:'group',role:'ADMIN',canAccessPipes:true});
    return res.json({destination:destinations[bbq.role],workspace:'bbq',role:bbq.role,canAccessPipes});
   }
   return res.json({destination:'/',workspace:'group',role:null,canAccessPipes});
