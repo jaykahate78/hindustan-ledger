@@ -1,10 +1,8 @@
 'use strict';
 // Voice-and-tone alerts are enabled by default; browser autoplay policies can still require one tap.
 const el=id=>document.getElementById(id);
-const ALERT_TEXT='Attention kitchen, new order received';
-const ALERT_VOLUME=1; // 100% of the configured alert output; device volume is controlled by the OS.
-const TRIPLE_ALERT=[[920,0],[920,.20],[1250,.40]];
-const VOICE_DELAY_MS=650; // Speak after the three tones, not over them.
+const ALERT_TEXT='New order received';
+const TWO_TONE_ALERT=[[880,0],[1180,.18]]; // Original compact kitchen chime.
 const LAST_NOTIFIED_KEY='bbq.kitchen.lastNotifiedOrderId.v1';
 const storedLast=(()=>{try{const n=Number(localStorage.getItem(LAST_NOTIFIED_KEY));return Number.isSafeInteger(n)&&n>0?n:0}catch{return 0}})();
 const state={lastNotified:storedLast,audio:null,audioReady:false,speechReady:!!window.speechSynthesis,
@@ -22,7 +20,7 @@ function audioStatus(){
  panel.className='sound-panel '+(audioWorking?'ready':'needs-tap');
  title.textContent=audioWorking?'🔊 Order sound: ON':'🔔 Tap to activate order sound';
  hint.textContent=audioWorking
-  ?(state.speechReady?'Triple Alert · 100% · “Attention kitchen, new order received” · once per new order.':'Triple Alert · 100% · once per new order. Voice unavailable on this browser.')
+  ?(state.speechReady?'Two-tone bell + Indian English voice: “New order received” · once per new order.':'Two-tone bell ON · once per new order. Voice unavailable on this browser.')
   :'Browsers may block automatic audio until you tap the button. Keep this device unmuted.';
  button.textContent=audioWorking?'🔊 Test Order Alert':'🔊 Activate Order Sound';
  if(state.soundError&&!audioWorking)el('error').textContent=state.soundError;
@@ -39,11 +37,11 @@ function beep(){
  if(!state.audioReady||!ctx||ctx.state!=='running')return false;
  try{
   const start=ctx.currentTime;
-  for(const [frequency,offset] of TRIPLE_ALERT){
+  for(const [frequency,offset] of TWO_TONE_ALERT){
    const o=ctx.createOscillator(),g=ctx.createGain();
    o.type='sine';o.frequency.value=frequency;
    g.gain.setValueAtTime(.0001,start+offset);
-   g.gain.exponentialRampToValueAtTime(.24*ALERT_VOLUME,start+offset+.015);
+   g.gain.exponentialRampToValueAtTime(.12,start+offset+.015);
    g.gain.exponentialRampToValueAtTime(.0001,start+offset+.15);
    o.connect(g);g.connect(ctx.destination);o.start(start+offset);o.stop(start+offset+.17);
   }
@@ -56,11 +54,14 @@ function speak(){
  try{
   synth.cancel();
   const utterance=new Utterance(ALERT_TEXT);
-  utterance.lang='en-IN';utterance.rate=.92;utterance.pitch=1;utterance.volume=ALERT_VOLUME;
+  utterance.lang='en-IN';utterance.rate=.9;utterance.pitch=1;utterance.volume=1;
   if(typeof synth.getVoices==='function'){
    const voices=synth.getVoices();
-   const voice=voices.find(v=>v.lang?.toLowerCase()==='en-in')||
-    voices.find(v=>v.lang?.toLowerCase().startsWith('en-'));
+   // Indian English is explicitly preferred; voice options vary by browser/device.
+   const indianEnglish=voices.filter(v=>/^en[-_]in$/i.test(v.lang||''));
+   const voice=indianEnglish.find(v=>v.localService===true)||indianEnglish[0]||
+    voices.find(v=>/^en[-_]/i.test(v.lang||'')&&/india|indian/i.test(v.name||''))||
+    voices.find(v=>/^en([_-]|$)/i.test(v.lang||''));
    if(voice)utterance.voice=voice;
   }
   utterance.onerror=()=>{el('error').textContent='Voice unavailable on this device. Check browser speech/audio settings.'};
@@ -71,8 +72,7 @@ function speak(){
 function playOrderAlert(){
  if(!state.audioReady){state.pendingAnnouncement=true;audioStatus();return}
  state.pendingAnnouncement=false;
- beep();
- setTimeout(speak,VOICE_DELAY_MS);
+ beep();speak();
 }
 function showArrival(count){
  const banner=el('arrival');
