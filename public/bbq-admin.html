@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BBQ Pav Bhaji | Admin Dashboard</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,Arial,sans-serif;color:#17294a;background:#f5f8fc}*{box-sizing:border-box}body{margin:0}
+header{background:#102a56;color:white;padding:20px max(22px,calc((100% - 1250px)/2));display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+header h1{font-size:22px;margin:0}header p{font-size:13px;color:#bfd2ec;margin:3px 0 0}
+button,a{font:600 14px Inter,Arial,sans-serif;cursor:pointer;border-radius:10px}button{border:0;background:#2563eb;color:#fff;padding:11px 16px}a{color:#fff;text-decoration:none}
+main{max-width:1250px;margin:26px auto;padding:0 20px}h2{font-size:19px;margin:0 0 13px}h3{font-size:16px;margin:0 0 9px}.hint{color:#64748b;font-size:13px}
+.filters{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:22px}.filters label{display:block;font-size:13px;font-weight:700}
+input[type=date]{font:inherit;border:1px solid #ccd8e8;border-radius:10px;padding:10px;background:white;min-width:185px;margin-top:6px}
+.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.metric{padding:20px;border:1px solid #dce6f2;border-radius:16px;background:white;box-shadow:0 5px 20px #102a5606}
+.metric span{display:block;color:#63748d;font-size:13px}.metric strong{display:block;font-size:28px;margin-top:6px;font-weight:750}
+.card{background:white;border:1px solid #dce6f2;border-radius:16px;padding:21px;margin:20px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;border-bottom:1px solid #e7ecf4;padding:11px 9px;vertical-align:top}th{background:#f5f8fc;color:#526582}tr:last-child td{border:0}
+.badge{padding:4px 9px;border-radius:18px;background:#ddf8ec;color:#137750;font-weight:700;display:inline-block;font-size:11px}
+.row-actions button{font-size:12px;padding:7px 10px;background:#e9f0ff;color:#1f4f9c}.breakdown{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.breakdown div{padding:15px;background:#f4f7fd;border-radius:10px}.breakdown small{color:#61708b;display:block}.breakdown strong{font-size:19px}
+.detail{background:#f5f8fc;border:1px solid #dce5f1;border-radius:11px;padding:15px;margin-top:13px}.detail p{margin:3px 0}
+.notice{padding:10px 12px;border-radius:9px;background:#edf3ff;color:#1d4fa0;margin-bottom:18px}.notice.error{background:#fff0f0;color:#a62929}
+.small{font-size:12px;color:#65758a}#details{min-height:36px}@media(max-width:850px){.metrics,.grid{grid-template-columns:1fr 1fr}}@media(max-width:570px){.metrics,.grid{grid-template-columns:1fr}.card{padding:13px}.metric strong{font-size:23px}}
+</style></head><body>
+<header><div><h1>BBQ Pav Bhaji — Admin</h1><p>Daily completed orders & collection summary</p></div><a href="/bbq-access.html">← Sign-in options</a></header>
+<main>
+<div id="error" role="status" aria-live="polite"></div>
+<div class="filters"><div><label for="date">Business date (IST)</label><input type="date" id="date"></div><button id="load" type="button">Show Report</button><button id="today" type="button">Today</button><span id="reportLabel" class="hint"></span></div>
+<section aria-label="Day overview" class="metrics">
+<div class="metric"><span>Completed Orders</span><strong id="completed">0</strong></div>
+<div class="metric"><span>Recorded Sales</span><strong id="sales">₹0</strong></div>
+<div class="metric"><span>Cash Collection</span><strong id="cash">₹0</strong></div>
+<div class="metric"><span>UPI + Card</span><strong id="digital">₹0</strong></div>
+</section>
+<div class="grid">
+<section class="card"><h2>Payment Breakup</h2><div class="breakdown"><div><small>Cash</small><strong id="cashDetail">₹0</strong></div><div><small>UPI</small><strong id="upi">₹0</strong></div><div><small>Card</small><strong id="card">₹0</strong></div></div><p class="small">Cashier-confirmed payment figures; not bank reconciled.</p></section>
+<section class="card"><h2>Day-wise History (Last 30 Days)</h2><div style="overflow-x:auto"><table><thead><tr><th>Date</th><th>Completed</th><th>Sales</th><th></th></tr></thead><tbody id="history"></tbody></table></div></section>
+</div>
+<section class="card"><h2>All Completed Orders for Selected Day</h2><p class="hint">Open any order for menu items, quantities, payment and cashier details.</p><div style="overflow-x:auto"><table><thead><tr><th>Order</th><th>Time (IST)</th><th>Type / Table</th><th>Cashier</th><th>Payment</th><th>Amount</th><th></th></tr></thead><tbody id="orders"></tbody></table></div>
+<div id="details" aria-live="polite"></div></section>
+<p class="small">Only completed BBQ orders are included. Orders marked Ready or Preparing do not count as completed. Historical records may have approximate completion time.</p>
+</main><script src="/js/bbq-admin.js"></script></body></html>
