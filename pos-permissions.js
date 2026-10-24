@@ -19,6 +19,6 @@ function canPos(method,path,role){
  return false;
 }
 function posCapabilities(role){
- return {view:role==='KITCHEN'?'kitchen':role==='ADMIN'?'admin':'cashier',can_report:role==='OWNER'||role==='ADMIN',can_bill:['OWNER','ADMIN','OPERATOR'].includes(role),can_kitchen:['OWNER','ADMIN','KITCHEN'].includes(role),can_manage_menu:['OWNER','ADMIN'].includes(role)};
+ return {view:role==='KITCHEN'?'kitchen':['ADMIN','OWNER'].includes(role)?'admin':'cashier',can_report:role==='OWNER'||role==='ADMIN',can_bill:['OWNER','ADMIN','OPERATOR'].includes(role),can_kitchen:['OWNER','ADMIN','KITCHEN'].includes(role),can_manage_menu:['OWNER','ADMIN'].includes(role)};
 }
 module.exports={canPos,posCapabilities};
