@@ -208,7 +208,7 @@ module.exports = function operations(pool, auth) {
       }
       if(totalCents>1000000000) throw fail(400,'Order total too high');
       const no='POS-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
-      const order=(await client.query('INSERT INTO pos_orders(organization_id,order_no,channel,table_label,subtotal,total_amount,payment_method,notes,payment_reference,payment_confirmed_at) VALUES($1,$2,$3,$4,$5,$5,$6,$7,$8,now()) RETURNING *',[id,no,channel,String(req.body.table_label||'').slice(0,40),totalCents/100,method,String(req.body.notes||'').slice(0,500),paymentReference])).rows[0];
+      const order=(await client.query('INSERT INTO pos_orders(organization_id,order_no,channel,table_label,subtotal,total_amount,payment_method,notes,payment_reference,payment_confirmed_at,cashier_user_id) VALUES($1,$2,$3,$4,$5,$5,$6,$7,$8,now(),$9) RETURNING *',[id,no,channel,String(req.body.table_label||'').slice(0,40),totalCents/100,method,String(req.body.notes||'').slice(0,500),paymentReference,req.user.id])).rows[0];
       for(const l of lines) await client.query('INSERT INTO pos_order_items(organization_id,order_id,menu_item_id,name_snapshot,quantity,unit_price,line_total) VALUES($1,$2,$3,$4,$5,$6,$7)',[id,order.id,l.menu.id,l.menu.name,l.qty,l.menu.price,l.lineCents/100]);
       await client.query('COMMIT');res.status(201).json(order);
     }catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
@@ -222,7 +222,7 @@ module.exports = function operations(pool, auth) {
       const r=await client.query('SELECT * FROM pos_orders WHERE id=$1 AND organization_id=$2 FOR UPDATE',[req.params.id,id]);
       if(!r.rowCount) throw fail(404,'Order not found');
       if(!transitions[r.rows[0].status].includes(req.body.status)) throw fail(400,'Invalid order status transition');
-      const out=await client.query('UPDATE pos_orders SET status=$1,updated_at=NOW() WHERE id=$2 RETURNING *',[req.body.status,req.params.id]);
+      const out=await client.query('UPDATE pos_orders SET status=$1,updated_at=NOW(),completed_at=CASE WHEN $1='COMPLETED' THEN NOW() ELSE completed_at END WHERE id=$2 AND organization_id=$3 RETURNING *',[req.body.status,req.params.id,id]);
       await client.query('COMMIT');res.json(out.rows[0]);
     }catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
   }));
@@ -231,6 +231,7 @@ module.exports = function operations(pool, auth) {
   require('./warehouse-returns')(router,pool);
   require('./pipes-procurement')(router,pool);
   require('./pipes-finance')(router,pool);
+  require('./bbq-admin-report')(router,pool);
   require('./pos-billing')(router,pool);
   require('./pipes-sales')(router,pool);
   require('./pipes-sales-dispatch')(router,pool);
