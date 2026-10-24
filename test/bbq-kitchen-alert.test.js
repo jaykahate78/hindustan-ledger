@@ -81,19 +81,21 @@ test('new KOT plays original two-tone bell with Indian English voice once per or
  f.setOrders([kot(52,'PREPARING'),kot(51,'READY')]);f.timers[0]();await f.settle();
  assert.equal(f.spoken.length,2,'stage changes must not trigger a new-order alert');
 });
-test('autoplay-blocked kitchen clearly prompts activation and activation restores audio',async()=>{
+test('when browser blocks autoplay the first touch activates audio without sound panel',async()=>{
  const f=fixture([kot(72)],false);
  vm.runInContext(script,f.context);
  await f.settle();
- assert.match(f.elements.get('soundStatus').textContent,/Tap to activate order sound/);
  assert.equal(f.spoken.length,0);
  assert.equal(f.elements.get('arrival').hidden,false);
+ assert.ok(!f.elements.has('soundPanel'),'no green sound bar instantiated');
+ assert.ok(!f.elements.has('sound'),'no test sound button');
+ const click=f.callbacks.find(c=>c.event==='pointerdown');
+ assert.ok(click,'first-interaction unlock is registered');
  f.allowSound();
- await f.elements.get('sound').onclick();
+ click.fn();
  await f.settle();
- assert.equal(f.spoken.at(-1),'New order received','test sound reads original phrase');
- assert.equal(f.tones.length,2,'two-tone after user gesture');
- assert.match(f.elements.get('soundStatus').textContent,/Order sound: ON/);
+ assert.equal(f.spoken.at(-1),'New order received','pending spoken alert after sound unlock');
+ assert.equal(f.tones.length,2,'two-tone after first interaction');
 });
 test('existing latest order IDs are persisted to avoid repeat notifications on reload',async()=>{
  const f=fixture([kot(81),kot(80)]);
@@ -105,16 +107,16 @@ test('existing latest order IDs are persisted to avoid repeat notifications on r
  f.timers[0]();await f.settle();
  assert.equal(f.spoken.length,1);
 });
-test('kitchen UI includes audio-unlock fallback and no prices or payment data',()=>{
- assert.match(html,/id="soundPanel"/);
- assert.match(html,/id="soundStatus"/);
+test('sound panel is removed and KOT voice/tone logic remains available',()=>{
+ assert.doesNotMatch(html,/id="soundPanel"|id="soundStatus"|id="sound"|sound-panel/);
  assert.match(html,/id="arrival"/);
- assert.match(html,/id="sound"/);
+ assert.match(html,/id="newCount"/);
  assert.match(script,/New order received/);
- assert.match(html,/Original two-tone bell \+ Indian English voice/);
  assert.match(script,/TWO_TONE_ALERT=\[\[880,0\],\[1180,\.18\]\]/);
  assert.match(script,/indianEnglish/);
  assert.match(script,/SpeechSynthesisUtterance/);
+ assert.match(script,/pointerdown/);
+ assert.match(script,/keydown/);
  assert.match(script,/localStorage/);
  assert.match(script,/visibilitychange/);
  assert.match(script,/setInterval\(reload,10000\)/);
