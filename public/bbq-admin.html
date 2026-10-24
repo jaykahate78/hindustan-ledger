@@ -5,6 +5,7 @@
 :root{font-family:Inter,system-ui,-apple-system,Arial,sans-serif;color:#17294a;background:#f5f8fc}*{box-sizing:border-box}body{margin:0}
 header{background:#102a56;color:white;padding:20px max(22px,calc((100% - 1250px)/2));display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 header h1{font-size:22px;margin:0}header p{font-size:13px;color:#bfd2ec;margin:3px 0 0}
+header .header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}header .home-link{display:inline-flex;align-items:center;padding:10px 14px;border:1px solid #90b4ed;border-radius:10px;color:#fff;background:#ffffff12;white-space:nowrap}header .home-link:hover,header .home-link:focus-visible{background:#ffffff25}
 button,a{font:600 14px Inter,Arial,sans-serif;cursor:pointer;border-radius:10px}button{border:0;background:#2563eb;color:#fff;padding:11px 16px}a{color:#fff;text-decoration:none}
 main{max-width:1250px;margin:26px auto;padding:0 20px}h2{font-size:19px;margin:0 0 13px}h3{font-size:16px;margin:0 0 9px}.hint{color:#64748b;font-size:13px}
 .filters{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:22px}.filters label{display:block;font-size:13px;font-weight:700}
@@ -27,7 +28,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;b
 .recipeRow{display:flex;align-items:flex-end;gap:10px;margin-bottom:10px}.recipeRow>div{flex:1}.recipeRow button{flex:none;background:#e9eef7;color:#102a56}.scrollx{overflow-x:auto}
 .low{color:#ab4a0b;font-weight:700}.ok{color:#17734c;font-weight:700}
 @media(max-width:850px){.inventory-actions{grid-template-columns:1fr}}@media(max-width:570px){.recipeRow{flex-wrap:wrap}}</style></head><body>
-<header><div><h1>BBQ Pav Bhaji — Admin</h1><p>Daily completed orders & collection summary</p></div><button type="button" id="logout">Sign out</button></header>
+<header><div><h1>BBQ Pav Bhaji — Admin</h1><p>Daily completed orders & collection summary</p></div><div class="header-actions"><a class="home-link" href="/?view=home">← Main Page</a><button type="button" id="logout">Sign out</button></div></header>
 <main><nav class="topnav" aria-label="Admin sections"><button type="button" class="active" id="tabSales">Orders & Sales</button><button type="button" id="tabInventory">Inventory & Recipes</button><button type="button" id="tabAccounts">Accounts & Ledger</button></nav>
 <div id="reportPane">
 <div id="error" role="status" aria-live="polite"></div>
