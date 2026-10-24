@@ -23,12 +23,12 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;b
 .inventory-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.inventory-actions form{padding:16px;background:#f7f9fd;border:1px solid #e1e9f4;border-radius:12px}
 .inventory-actions label,.recipe-editor label{display:block;font-size:12px;font-weight:700;color:#536783;margin:10px 0 3px}
 .inventory-actions input,.inventory-actions select,.recipe-editor input,.recipe-editor select{width:100%;font:inherit;padding:10px;border:1px solid #cbd6e7;border-radius:8px;background:#fff}.inventory-actions button{margin-top:12px}
-#inventoryPane[hidden],#reportPane[hidden]{display:none!important}.recipe-editor{background:#f7f9fd;border:1px solid #e1e9f4;border-radius:12px;padding:16px}
+#inventoryPane[hidden],#reportPane[hidden],#accountsPane[hidden]{display:none!important}.recipe-editor{background:#f7f9fd;border:1px solid #e1e9f4;border-radius:12px;padding:16px}
 .recipeRow{display:flex;align-items:flex-end;gap:10px;margin-bottom:10px}.recipeRow>div{flex:1}.recipeRow button{flex:none;background:#e9eef7;color:#102a56}.scrollx{overflow-x:auto}
 .low{color:#ab4a0b;font-weight:700}.ok{color:#17734c;font-weight:700}
 @media(max-width:850px){.inventory-actions{grid-template-columns:1fr}}@media(max-width:570px){.recipeRow{flex-wrap:wrap}}</style></head><body>
 <header><div><h1>BBQ Pav Bhaji — Admin</h1><p>Daily completed orders & collection summary</p></div><a href="/bbq-access.html">← Sign-in options</a><button type="button" id="logout">Sign out</button></header>
-<main><nav class="topnav" aria-label="Admin sections"><button type="button" class="active" id="tabSales">Orders & Sales</button><button type="button" id="tabInventory">Inventory & Recipes</button></nav>
+<main><nav class="topnav" aria-label="Admin sections"><button type="button" class="active" id="tabSales">Orders & Sales</button><button type="button" id="tabInventory">Inventory & Recipes</button><button type="button" id="tabAccounts">Accounts & Ledger</button></nav>
 <div id="reportPane">
 <div id="error" role="status" aria-live="polite"></div>
 <div class="filters"><div><label for="date">Business date (IST)</label><input type="date" id="date"></div><button id="load" type="button">Show Report</button><button id="today" type="button">Today</button><span id="reportLabel" class="hint"></span></div>
@@ -57,4 +57,12 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;b
 <section class="card"><h2>5. Recipe Per Dish</h2><p class="hint">Example only: 1 Pav Bhaji might use Pav 2 pieces, Bhaji Base 250 g, Butter 15 g. Enter your actual approved quantities. Changes affect future orders only.</p><div class="recipe-editor"><label for="recipeDish">Choose Dish</label><select id="recipeDish" required></select><div id="recipeRows"></div><button type="button" id="addRecipeRow">+ Ingredient</button><button type="button" id="saveRecipe">Save Recipe</button><p id="recipeStatus" class="small"></p></div></section>
 <section class="card"><h2>6. Daily Inventory Report</h2><div class="filters"><div><label for="inventoryDate">Business date (IST)</label><input type="date" id="inventoryDate"></div><button type="button" id="showInventoryReport">Show Consumption</button></div><div class="scrollx"><table><thead><tr><th>Ingredient</th><th>Opening</th><th>Stock In</th><th>Used at Billing</th><th>Restored</th><th>Manual Waste</th><th>Cancelled Prep Waste*</th><th>Closing</th></tr></thead><tbody id="inventoryDaily"></tbody></table></div><p class="small">* Cancelled preparation waste has already been deducted at billing; it is displayed separately, not subtracted a second time.</p><h3>Movement History</h3><div class="scrollx"><table><thead><tr><th>Time</th><th>Ingredient</th><th>Movement</th><th>Change</th><th>Reference</th></tr></thead><tbody id="inventoryMoves"></tbody></table></div></section>
 </div>
+<section id="accountsPane" hidden aria-label="BBQ Accounts and Ledger">
+  <div class="card">
+    <h2>Accounts & Ledger — BBQ Pav Bhaji</h2>
+    <p class="hint">Existing company accounting section: balances, vouchers, customer/supplier accounts and journal history. This ledger is separate from the POS order report; automatic journal posting from POS is not enabled.</p>
+    <div id="accountingNotice" class="hint">Select this tab to load the existing BBQ accounts.</div>
+    <iframe id="bbqAccountingFrame" title="BBQ company accounts" loading="lazy" style="display:block;width:100%;min-height:1050px;border:1px solid #dbe5f2;border-radius:12px;background:#fff" referrerpolicy="same-origin"></iframe>
+  </div>
+</section>
 </main><script src="/js/bbq-inventory-admin.js"></script><script src="/js/bbq-admin.js"></script><script src="/js/bbq-logout.js"></script></body></html>
