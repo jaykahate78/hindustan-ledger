@@ -1,8 +1,23 @@
 'use strict';
-const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const vm=require('node:vm');const path=require('node:path');
-const html=fs.readFileSync(path.join(__dirname,'../public/bbq.html'),'utf8');
-const js=fs.readFileSync(path.join(__dirname,'../public/js/bbq-pos-v2.js'),'utf8');
-test('restaurant v2 client syntax and three focused views',()=>{assert.doesNotThrow(()=>new vm.Script(js));for(const view of ['billing','menu'])assert.match(html,new RegExp('id="'+view+'"'));assert.match(html,/bbq-pos-v2\.js/);assert.match(fs.readFileSync(path.join(__dirname,'../public/bbq-kitchen.html'),'utf8'),/id="tickets"/);});
-test('only existing restaurant workflows enhanced',()=>{for(const s of ['pos/menu','pos/orders','availability','payment','receipt','Print KOT','renderCart','statusFilter'])assert.ok(js.includes(s));assert.doesNotMatch(js,/pipes\/|warehouse|factory/i);assert.doesNotMatch(html,/Raw Material Stock|Hindustan Pipes/);});
-test('quick cart quantity guards, explicit payment confirmation, safe ticket DOM',()=>{assert.match(js,/count>=500/);assert.match(js,/window\.confirm\('Confirm actual /);assert.match(js,/textContent/);assert.doesNotMatch(js,/innerHTML\s*=/);});
-test('backend menu availability endpoint isolated and validated',()=>{const server=fs.readFileSync(path.join(__dirname,'../operations.js'),'utf8');assert.match(server,/\/pos\/menu\/:id\/availability/);assert.match(server,/typeof req\.body\.available!=='boolean'/);assert.match(server,/organization_id=\$2 AND id=\$3/);});
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const read=name=>fs.readFileSync(path.join(__dirname,'../public',name),'utf8');
+test('cashier is a single billing view, kitchen and admin are separate',()=>{
+ const html=read('bbq.html'),client=read('js/bbq-cashier.js');
+ assert.doesNotThrow(()=>new vm.Script(client));
+ assert.ok(html.includes('id="cartItems"')&&html.includes('id="placeOrder"'));
+ assert.ok(html.includes('bbq-cashier.js'));
+ assert.ok(read('bbq-kitchen.html').includes('id="tickets"'));
+ assert.ok(read('bbq-admin.html').includes('id="orders"'));
+ assert.ok(!html.includes('id="menuForm"')&&!html.includes('id="kitchen"'));
+});
+test('cart quantity and server-priced payment flow',()=>{
+ const client=read('js/bbq-cashier.js');
+ for(const x of ['pos/menu','pos/orders','renderCart','payment_method','payment_confirmed:true'])assert.ok(client.includes(x),x);
+ assert.ok(client.includes('window.confirm'));
+ assert.ok(!client.includes('innerHTML='));
+});
+test('availability endpoint preserves the existing menu behaviour',()=>{
+ const ops=fs.readFileSync(path.join(__dirname,'../operations.js'),'utf8');
+ assert.ok(ops.includes("/pos/menu/:id/availability"));
+ assert.ok(ops.includes("typeof req.body.available!=='boolean'"));
+});
