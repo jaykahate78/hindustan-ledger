@@ -14,16 +14,9 @@ async function api(path,opt={}){
  return data;
 }
 function node(tag,text){const n=document.createElement(tag);if(text!==undefined)n.textContent=String(text);return n}
+// Alerts run without a visible control panel. Browser gesture restrictions still apply.
 function audioStatus(){
- const panel=el('soundPanel'),title=el('soundStatus'),hint=el('soundHint'),button=el('sound');
- const audioWorking=state.audioReady;
- panel.className='sound-panel '+(audioWorking?'ready':'needs-tap');
- title.textContent=audioWorking?'🔊 Order sound: ON':'🔔 Tap to activate order sound';
- hint.textContent=audioWorking
-  ?(state.speechReady?'Two-tone bell + Indian English voice: “New order received” · once per new order.':'Two-tone bell ON · once per new order. Voice unavailable on this browser.')
-  :'Browsers may block automatic audio until you tap the button. Keep this device unmuted.';
- button.textContent=audioWorking?'🔊 Test Order Alert':'🔊 Activate Order Sound';
- if(state.soundError&&!audioWorking)el('error').textContent=state.soundError;
+ if(state.audioReady)state.soundError='';
 }
 function context(){
  if(state.audio)return state.audio;
@@ -81,23 +74,18 @@ function showArrival(count){
  clearTimeout(state.arrivalTimeout);
  state.arrivalTimeout=setTimeout(()=>{banner.hidden=true},8000);
 }
-async function activateAudio(test=false){
- // This handler must be reached from a click to unlock sound in strict browsers.
+async function activateAudio(){
+ // A first tap or keypress can unlock sound on browsers that block autoplay.
  const ctx=context();
- const resumed=ctx&&ctx.state!=='running'?ctx.resume():Promise.resolve();
- // Speech is invoked synchronously in the click gesture for browser compatibility.
- if(test)speak();
+ if(!ctx)return;
  try{
-  await resumed;
-  state.audioReady=ctx?ctx.state==='running':!!(window.speechSynthesis&&window.SpeechSynthesisUtterance);
-  if(!state.audioReady)state.soundError='Audio is blocked. Tap Activate Order Sound once and check device volume.';
+  if(ctx.state!=='running')await ctx.resume();
+  state.audioReady=ctx.state==='running';
   audioStatus();
-  if(state.audioReady){
-   if(test)beep();
-   else if(state.pendingAnnouncement)playOrderAlert();
-   state.pendingAnnouncement=false;
-  }
- }catch(e){state.soundError='Audio is blocked: '+e.message;audioStatus()}
+  if(state.audioReady&&state.pendingAnnouncement)playOrderAlert();
+ }catch(e){
+  state.soundError='Audio is blocked: '+e.message;
+ }
 }
 function attemptAutomaticSound(){
  const ctx=context();
@@ -161,7 +149,12 @@ async function refresh(){
  }finally{state.refreshing=false}
 }
 function reload(){refresh().catch(e=>el('error').textContent=e.message)}
-el('sound').onclick=()=>activateAudio(true);
+// No visible sound banner: unlock automatically on the first kitchen interaction if needed.
+function unlockOnInteraction(){
+ if(state.authorized&&!state.audioReady)void activateAudio();
+}
+document.addEventListener('pointerdown',unlockOnInteraction,{passive:true});
+document.addEventListener('keydown',unlockOnInteraction);
 el('reload').onclick=reload;
 audioStatus();
 api('pos/session').then(r=>{
