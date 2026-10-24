@@ -25,7 +25,9 @@ test('order creation captures cashier and kitchen completion time',()=>{
 test('separate role-specific logins and pages parse',()=>{
  const server=read('server.js');
  for(const route of ['/bbq-admin.html','/bbq.html','/bbq-kitchen.html'])assert.ok(server.includes(route));
- for(const mode of ['admin','billing','kitchen'])assert.ok(read('public/bbq-'+mode+'-login.html').includes('bbq-role-login.js'));
+ for(const mode of ['admin','billing','kitchen'])assert.ok(read('public/bbq-'+mode+'-login.html').includes('/login.html'));
+ assert.ok(read('public/login.html').includes('id="login"'));
+ assert.ok(read('public/login.js').includes("'/api/auth/landing'"));
  for(const file of ['public/js/bbq-role-login.js','public/js/bbq-cashier.js','public/js/bbq-admin.js','public/js/bbq-kitchen.js'])assert.doesNotThrow(()=>new vm.Script(read(file)));
  assert.ok(!read('public/bbq.html').includes('id="kitchen"'));
  assert.ok(!read('public/bbq-kitchen.html').includes('id="paymentMethod"'));
