@@ -35,11 +35,18 @@ const scopeAccount=async (req,res,next)=>{
   req.params.orgId=id;
   return auth.requireOrg(req,res,next);
 };
-app.use(['/api/accounts','/api/vouchers','/api/account-balances'],scopeAccount,auth.requireRole('OPERATOR'));
+app.use(['/api/accounts','/api/vouchers','/api/account-balances'],scopeAccount,async(req,res,next)=>{
+  try{
+    if(req.user.is_owner)return next();
+    const org=await pool.query('SELECT name FROM organizations WHERE id=$1',[req.orgId]);
+    if(org.rows[0]?.name==='BBQ Pav Bhaji Chain'&&req.orgRole!=='ADMIN')return res.status(403).json({error:'BBQ accounting is available to admins only'});
+    return next();
+  }catch(err){next(err)}
+},auth.requireRole('OPERATOR'));
 app.use((req,res,next)=>{
   if(req.path.startsWith('/api/')||req.path==='/login.html'||req.path==='/login.js'||req.path==='/bbq-access.html'||['/bbq-admin.html','/bbq.html','/bbq-kitchen.html'].includes(req.path)||['/bbq-admin-login.html','/bbq-billing-login.html','/bbq-kitchen-login.html'].includes(req.path)||req.path==='/js/bbq-role-login.js'||req.path.startsWith('/css/')||req.path==='/manifest.webmanifest'||req.path==='/sw.js'||req.path.startsWith('/icons/'))return next();
   const token=(String(req.headers.cookie||'').match(/(?:^|; )hl_session=([a-f0-9]{64})/)||[])[1];
-  if(!token)return res.redirect('/login.html');
+  if(!token)return res.redirect(req.path==='/accounting.html'&&req.query.company==='bbq'?'/bbq-admin-login.html':'/login.html');
   next();
 });
 // Server-enforced BBQ screen separation; changing a URL cannot change staff permissions.
@@ -60,6 +67,20 @@ for(const [url,required,file] of [
   }catch(e){next(e)}
  });
 }
+// The legacy accounting workspace is embedded only inside BBQ Admin.
+// The existing Pipes/other company ledgers retain their original routes.
+app.get('/accounting.html',(req,res,next)=>{
+ if(req.query.company!=='bbq')return next();
+ return auth.requireAuth(req,res,next);
+},async(req,res,next)=>{
+ if(req.query.company!=='bbq')return next();
+ try{
+  if(req.user.is_owner)return res.sendFile(path.join(__dirname,'public','accounting.html'));
+  const access=await pool.query("SELECT r.role FROM app_user_roles r JOIN organizations o ON o.id=r.organization_id WHERE r.user_id=$1 AND o.name='BBQ Pav Bhaji Chain'",[req.user.id]);
+  if(!access.rowCount||access.rows[0].role!=='ADMIN')return res.status(403).send('BBQ accounting is admin-only.');
+  return res.sendFile(path.join(__dirname,'public','accounting.html'));
+ }catch(err){next(err)}
+});
 app.use(express.static(path.join(__dirname,'public')));
 
 // 1. Get all organizations
