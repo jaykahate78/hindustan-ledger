@@ -17,8 +17,26 @@ async function invRefresh(){const [items,recipes,menu]=await Promise.all([invApi
 function invRenderReport(data){const target=invEl('inventoryDaily');target.replaceChildren();for(const item of data.items||[]){const tr=invNode('tr');for(const value of [item.name+' ('+item.unit+')',invFormat(item.opening_quantity),invFormat(item.stock_in),invFormat(item.consumed),invFormat(item.restored),invFormat(item.wastage),invFormat(item.prepared_cancel_waste),invFormat(item.closing_quantity)])tr.append(invNode('td',value));target.append(tr)}if(!target.children.length){const tr=invNode('tr'),td=invNode('td','No inventory materials yet.');td.colSpan=8;tr.append(td);target.append(tr)}
  const moves=invEl('inventoryMoves');moves.replaceChildren();for(const m of data.movements||[]){const tr=invNode('tr');const date=new Date(m.created_at).toLocaleString('en-IN',{timeZone:'Asia/Kolkata',dateStyle:'short',timeStyle:'short'});for(const value of [date,m.name,m.reason,(Number(m.quantity_delta)>0?'+':'')+invFormat(m.quantity_delta)+' '+m.unit,m.reference||'—'])tr.append(invNode('td',value));moves.append(tr)}}
 async function invReport(){const d=invEl('inventoryDate').value;invRenderReport(await invApi('pos/inventory/report'+(d?'?date='+encodeURIComponent(d):'')))}
-invEl('tabSales').onclick=()=>{invEl('inventoryPane').hidden=true;invEl('reportPane').hidden=false;invEl('tabSales').className='active';invEl('tabInventory').className=''};
-invEl('tabInventory').onclick=()=>invAction(async()=>{invEl('reportPane').hidden=true;invEl('inventoryPane').hidden=false;invEl('tabSales').className='';invEl('tabInventory').className='active';if(!invState.loaded){await invRefresh();await invReport();invState.loaded=true}});
+function invShowTab(tab){
+ for(const [name,button,pane] of [['sales','tabSales','reportPane'],['inventory','tabInventory','inventoryPane'],['accounts','tabAccounts','accountsPane']]){
+  invEl(pane).hidden=name!==tab;invEl(button).className=name===tab?'active':'';
+  invEl(button).setAttribute('aria-pressed',String(name===tab));
+ }
+}
+invEl('tabSales').onclick=()=>invShowTab('sales');
+invEl('tabInventory').onclick=()=>invAction(async()=>{
+ invShowTab('inventory');
+ if(!invState.loaded){await invRefresh();await invReport();invState.loaded=true}
+});
+invEl('tabAccounts').onclick=()=>{
+ invShowTab('accounts');
+ const frame=invEl('bbqAccountingFrame');
+ if(!frame.hasAttribute('src')){
+  invEl('accountingNotice').textContent='BBQ company-only ledger loading…';
+  frame.src='/accounting.html?company=bbq&embedded=1';
+  frame.addEventListener('load',()=>{invEl('accountingNotice').textContent='Showing existing BBQ company accounting. Vouchers and balances remain separate from POS reports.'},{once:true});
+ }
+};
 invEl('recipeDish').onchange=invRecipeForDish;
 invEl('addRecipeRow').onclick=()=>{if(!invState.items.length)return invMessage('Add an ingredient first',true);invEl('recipeRows').append(invRow(null))};
 invEl('saveRecipe').onclick=()=>invAction(async()=>{const dish=Number(invEl('recipeDish').value),rows=[...invEl('recipeRows').querySelectorAll('.recipeRow')];const items=rows.map(r=>({inventory_item_id:Number(r.querySelector('select').value),qty_per_dish:Number(r.querySelector('input').value)}));if(!items.length)throw Error('Add at least one ingredient');if(new Set(items.map(x=>x.inventory_item_id)).size!==items.length)throw Error('Duplicate ingredient in recipe');await invApi('pos/inventory/menu/'+dish+'/recipe',{method:'PUT',body:JSON.stringify({items})});await invRefresh();invMessage('Recipe saved. Future orders will use the updated quantities.')});
