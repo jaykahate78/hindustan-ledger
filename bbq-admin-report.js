@@ -19,7 +19,7 @@ module.exports=function attachBbqAdmin(router,pool){
     COALESCE(SUM(o.total_amount) FILTER(WHERE o.payment_method='UPI'),0)::numeric(14,2) AS upi_sales,
     COALESCE(SUM(o.total_amount) FILTER(WHERE o.payment_method='CARD'),0)::numeric(14,2) AS card_sales,
     COUNT(DISTINCT o.cashier_user_id)::int AS cashiers
-    FROM pos_orders o WHERE o.organization_id=$1 AND o.status='COMPLETED'
+    FROM pos_orders o WHERE o.organization_id=$1 AND o.status='COMPLETED' AND o.order_no NOT LIKE 'STAGING-%'
     AND (${dayExpr})::date=COALESCE($2::date,(now() AT TIME ZONE 'Asia/Kolkata')::date)`,params),
    pool.query(`SELECT o.id,o.order_no,o.channel,o.table_label,o.status,o.total_amount,o.payment_method,
     o.payment_reference,o.created_at,COALESCE(o.completed_at,o.updated_at) AS completed_at,
@@ -28,12 +28,12 @@ module.exports=function attachBbqAdmin(router,pool){
       ORDER BY i.id) FILTER(WHERE i.id IS NOT NULL),'[]'::json) AS items
     FROM pos_orders o LEFT JOIN app_users u ON u.id=o.cashier_user_id
     LEFT JOIN pos_order_items i ON i.order_id=o.id AND i.organization_id=o.organization_id
-    WHERE o.organization_id=$1 AND o.status='COMPLETED'
+    WHERE o.organization_id=$1 AND o.status='COMPLETED' AND o.order_no NOT LIKE 'STAGING-%'
     AND (${dayExpr})::date=COALESCE($2::date,(now() AT TIME ZONE 'Asia/Kolkata')::date)
     GROUP BY o.id,u.username ORDER BY completed_at DESC,o.id DESC LIMIT 500`,params),
    pool.query(`SELECT (${dayExpr})::date AS day,COUNT(*)::int AS orders,
     COALESCE(SUM(o.total_amount),0)::numeric(14,2) AS recorded_sales
-    FROM pos_orders o WHERE o.organization_id=$1 AND o.status='COMPLETED'
+    FROM pos_orders o WHERE o.organization_id=$1 AND o.status='COMPLETED' AND o.order_no NOT LIKE 'STAGING-%'
     AND (${dayExpr})::date >= (now() AT TIME ZONE 'Asia/Kolkata')::date-29
     GROUP BY day ORDER BY day DESC`,[orgId])
   ]);
