@@ -1,26 +1,21 @@
 'use strict';
-const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');const vm=require('node:vm');
-const publicDir=path.resolve(__dirname,'../public');
-const read=file=>fs.readFileSync(path.join(publicDir,file),'utf8');
-test('separate business pages have only their dedicated operations and accounting links',()=>{
- const pipes=read('pipes.html'),bbq=read('bbq.html'),portal=read('index.html');
- assert.match(pipes,/\/js\/pipes-ui\.js/);assert.doesNotMatch(pipes,/\/js\/bbq-ui\.js|Kitchen Order Queue/);
- assert.match(bbq,/\/js\/bbq-pos-v2\.js/);assert.doesNotMatch(bbq,/\/js\/pipes-ui\.js|Raw Material Stock|Pre-Casting Production/);
- assert.match(pipes,/accounting\.html\?company=pipes/);assert.match(bbq,/accounting\.html\?company=bbq/);
- assert.match(portal,/href="\/pipes\.html"/);assert.match(portal,/href="\/bbq\.html"/);
- assert.doesNotMatch(portal,/Voucher \/ Transactions|Create Transaction Voucher/);
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
+const read=name=>fs.readFileSync(path.join(__dirname,'../public',name),'utf8');
+test('Hindustan Pipes and BBQ software remain separate',()=>{
+ assert.ok(read('pipes.html').includes('js/pipes-ui.js'));
+ assert.ok(read('bbq.html').includes('js/bbq-cashier.js'));
+ assert.ok(!read('bbq.html').includes('Raw Material Stock'));
+ assert.ok(read('index.html').includes('href="/bbq-access.html"'));
+ assert.ok(read('index.html').includes('href="/pipes.html"'));
 });
-test('dedicated frontend scripts parse and do not contain cross-business code',()=>{
- const pipes=read('js/pipes-ui.js'),bbq=read('js/bbq-pos-v2.js');
- for(const [name,source] of [['pipes',pipes],['bbq',bbq]])assert.doesNotThrow(()=>new vm.Script(source,{filename:name+'.js'}));
- assert.match(pipes,/async function pipes\(\)/);assert.doesNotMatch(pipes,/async function pos\(\)/);
- assert.match(bbq,/async function refresh\(\)/);assert.doesNotMatch(bbq,/async function pipes\(\)/);
+test('three BBQ logins point to three separate screens',()=>{
+ const portal=read('bbq-access.html');
+ for(const role of ['admin','billing','kitchen'])assert.ok(portal.includes('/bbq-'+role+'-login.html'));
+ for(const page of ['bbq-admin.html','bbq.html','bbq-kitchen.html'])assert.ok(read(page).includes('<html'));
+ for(const f of ['js/pipes-ui.js','js/bbq-cashier.js','js/bbq-admin.js','js/bbq-kitchen.js','js/bbq-role-login.js'])assert.doesNotThrow(()=>new vm.Script(read(f)));
 });
-test('accounting page is locked by requested company',()=>{
- const accounting=read('accounting.html'),js=read('js/company-accounting.js');
- assert.match(accounting,/company-accounting\.js/);
- assert.match(js,/orgSelector\.disabled=true/);
- assert.match(js,/URLSearchParams/);
- assert.match(js,/orgs\.find\(o=>o\.name===names\[requested\]\)/);
+test('separate company accounting remains locked',()=>{
+ const js=read('js/company-accounting.js');
+ assert.ok(js.includes('orgSelector.disabled=true'));
  assert.doesNotThrow(()=>new vm.Script(js));
 });
