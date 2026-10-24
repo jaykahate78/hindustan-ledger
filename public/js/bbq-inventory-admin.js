@@ -28,13 +28,45 @@ invEl('tabInventory').onclick=()=>invAction(async()=>{
  invShowTab('inventory');
  if(!invState.loaded){await invRefresh();await invReport();invState.loaded=true}
 });
+const BBQ_ACCOUNTING_URL='/accounting.html?company=bbq&embedded=1';
+let accountingNavigationFailures=0;
+function accountingViewIsValid(frame){
+ try{
+  const location=frame.contentWindow?.location;
+  return location?.pathname==='/accounting.html'&&
+   new URLSearchParams(location.search).get('company')==='bbq'&&
+   new URLSearchParams(location.search).get('embedded')==='1';
+ }catch{return false}
+}
+function checkAccountingFrame(){
+ const frame=invEl('bbqAccountingFrame'),notice=invEl('accountingNotice');
+ if(accountingViewIsValid(frame)){
+  accountingNavigationFailures=0;
+  notice.textContent='BBQ company accounting: Account Balances, Vouchers, Customer & Supplier Setup, Journal Ledger History.';
+  return;
+ }
+ // The embedded ledger may have navigated through its old "All businesses" link.
+ // Never display a second Admin Dashboard recursively inside this iframe.
+ accountingNavigationFailures+=1;
+ if(accountingNavigationFailures>=3){
+  frame.hidden=true;
+  notice.textContent='The Accounts page could not load. Sign in again or reload this page.';
+  return;
+ }
+ notice.textContent='Restoring BBQ Accounts & Ledger…';
+ frame.src=BBQ_ACCOUNTING_URL;
+}
 invEl('tabAccounts').onclick=()=>{
  invShowTab('accounts');
  const frame=invEl('bbqAccountingFrame');
  if(!frame.hasAttribute('src')){
-  invEl('accountingNotice').textContent='BBQ company-only ledger loading…';
-  frame.src='/accounting.html?company=bbq&embedded=1';
-  frame.addEventListener('load',()=>{invEl('accountingNotice').textContent='Showing existing BBQ company accounting. Vouchers and balances remain separate from POS reports.'},{once:true});
+  invEl('accountingNotice').textContent='Loading BBQ Accounts & Ledger…';
+  frame.addEventListener('load',checkAccountingFrame);
+  frame.src=BBQ_ACCOUNTING_URL;
+ }else if(frame.hidden){
+  accountingNavigationFailures=0;frame.hidden=false;frame.src=BBQ_ACCOUNTING_URL;
+ }else if(!accountingViewIsValid(frame)){
+  checkAccountingFrame();
  }
 };
 invEl('recipeDish').onchange=invRecipeForDish;
