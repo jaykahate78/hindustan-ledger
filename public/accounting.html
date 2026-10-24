@@ -31,6 +31,7 @@
  html.bbq-embedded .app-container{max-width:none;margin:0;padding:0}
  html.bbq-embedded .tabs-nav{position:relative;top:0}
  html.bbq-embedded .workspace-quick-nav{display:none!important}
+ html.bbq-embedded .accounting-back-nav{display:none!important}
  html.bbq-embedded #accountingScope{display:none}
  html.bbq-embedded .tab-content{padding-bottom:16px}
 </style>
@@ -57,7 +58,7 @@
     </header>
 
     <!-- Main Navigation Bar -->
-    <div style="padding:14px 20px;background:#eaf1ff"><a href="/" style="color:#102a56;font-weight:700">← All businesses</a> <span id="accountingScope" style="margin-left:20px;color:#64748b">Company-scoped ledger</span></div><nav class="tabs-nav" id="accounting-section">
+    <div class="accounting-back-nav" style="padding:14px 20px;background:#eaf1ff"><a href="/" style="color:#102a56;font-weight:700">← All businesses</a> <span id="accountingScope" style="margin-left:20px;color:#64748b">Company-scoped ledger</span></div><nav class="tabs-nav" id="accounting-section">
       <button class="tab-btn" data-tab="tab-balances">Account Balances</button>
       <button class="tab-btn active" data-tab="tab-vouchers">Voucher / Transactions</button>
       <button class="tab-btn" data-tab="tab-ledgers">Customer & Supplier Setup</button>
