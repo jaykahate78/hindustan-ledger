@@ -1,1 +1,52 @@
-<!doctype html><html lang="en"><head><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#102a56"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hindustan Ledger | Sign in</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:Inter,Arial,sans-serif;background:#f5f8fc;color:#102a56}main{width:min(400px,90vw);background:white;padding:34px;border:1px solid #dce6f4;border-radius:18px;box-shadow:0 15px 45px #102a5614}label{display:block;margin:16px 0 6px;font-weight:600}input{box-sizing:border-box;width:100%;padding:14px;border-radius:9px;border:1px solid #ccd8e7;font-size:16px}button{width:100%;border:0;background:#2563eb;color:white;padding:15px;border-radius:9px;margin-top:24px;font-size:16px;cursor:pointer}small{color:#64748b}#error{color:#b91c1c;min-height:20px}</style></head><body><main><h1>Hindustan Ledger</h1><small>Authorized employee sign-in</small><form id="login"><label for="username">Username</label><input id="username" name="username" required autocomplete="username"><label for="password">Password</label><input id="password" type="password" name="password" required autocomplete="current-password"><p id="error" role="alert"></p><button type="submit">Sign in</button></form></main><script src="/login.js"></script><script>if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}</script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+ <meta name="theme-color" content="#102a56">
+ <link rel="manifest" href="/manifest.webmanifest">
+ <title>Hindustan Ledger | Secure Sign In</title>
+ <style>
+ :root{font-family:Inter,system-ui,-apple-system,Arial,sans-serif;color:#14294b;background:#f5f8fc}
+ *{box-sizing:border-box}
+ body{margin:0;min-height:100vh;display:grid;grid-template-rows:auto 1fr auto}
+ header{background:#102a56;color:#fff;padding:24px max(24px,calc((100vw - 1120px)/2))}
+ header .brand{font-size:22px;font-weight:800;letter-spacing:-.3px}
+ header small{display:block;margin-top:5px;color:#bfcfeb;font-size:13px}
+ main{display:grid;place-items:center;padding:38px 16px}
+ .panel{width:min(100%,460px);background:#fff;border:1px solid #dfe7f2;border-radius:20px;padding:34px;box-shadow:0 20px 70px rgba(15,39,80,.09)}
+ .eyebrow{font-size:12px;letter-spacing:1px;font-weight:800;text-transform:uppercase;color:#2563eb}
+ h1{margin:13px 0 6px;font-size:27px;letter-spacing:-.7px}
+ .desc{color:#62748c;font-size:14px;line-height:1.6;margin:0 0 27px}
+ label{display:block;margin:15px 0 7px;font-size:13px;font-weight:750}
+ input{display:block;width:100%;padding:13px 14px;border:1px solid #ced9e9;border-radius:10px;font:inherit;font-size:15px}
+ input:focus{outline:2px solid #93bbff;border-color:#2563eb;outline-offset:0}
+ button{width:100%;margin-top:15px;border:0;border-radius:10px;padding:15px;background:#2563eb;color:#fff;font:750 15px Inter,Arial,sans-serif;cursor:pointer}
+ button:disabled{opacity:.65;cursor:wait}
+ #error{color:#b91c1c;min-height:20px;font-size:13px;margin:11px 0 0}
+ .hint{display:flex;align-items:flex-start;gap:9px;margin-top:20px;padding:13px;border-radius:11px;background:#f3f7fd;color:#4e6684;font-size:12px;line-height:1.5}
+ .hint svg{flex:none}
+ footer{text-align:center;padding:0 15px 23px;color:#71839b;font-size:12px}
+ @media(max-width:500px){.panel{padding:24px}h1{font-size:24px}}
+ </style>
+</head>
+<body>
+ <header><div class="brand">Hindustan Ledger</div><small>Business operations · Secure staff access</small></header>
+ <main><section class="panel" aria-labelledby="heading">
+  <div class="eyebrow">One secure login</div>
+  <h1 id="heading">Welcome back</h1>
+  <p class="desc">Enter your assigned username and password. Your dashboard opens automatically based on your account's role.</p>
+  <form id="login">
+   <label for="username">Username</label>
+   <input id="username" name="username" required autocomplete="username" maxlength="80" placeholder="Enter staff username" autocapitalize="off" spellcheck="false">
+   <label for="password">Password</label>
+   <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="Enter password">
+   <p id="error" role="alert" aria-live="polite"></p>
+   <button type="submit">Sign in</button>
+  </form>
+  <div class="hint"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Admin → Orders, Inventory & Accounts · Cashier → Billing · Kitchen → KOT. No role selection required.</span></div>
+ </section></main>
+ <footer>Authorized employees only · Roles and permissions are enforced by the server</footer>
+ <script src="/login.js"></script>
+ <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});</script>
+</body></html>
