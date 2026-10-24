@@ -25,6 +25,16 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+ html.bbq-embedded body{background:#fff}
+ html.bbq-embedded .navbar{display:none!important}
+ html.bbq-embedded .app-container{max-width:none;margin:0;padding:0}
+ html.bbq-embedded .tabs-nav{position:relative;top:0}
+ html.bbq-embedded .workspace-quick-nav{display:none!important}
+ html.bbq-embedded #accountingScope{display:none}
+ html.bbq-embedded .tab-content{padding-bottom:16px}
+</style>
+<script>if(new URLSearchParams(location.search).get('company')==='bbq'&&new URLSearchParams(location.search).get('embedded')==='1')document.documentElement.classList.add('bbq-embedded');</script>
 </head>
 <body>
   <div class="app-container">
