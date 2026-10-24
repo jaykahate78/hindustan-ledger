@@ -37,7 +37,7 @@ const scopeAccount=async (req,res,next)=>{
 };
 app.use(['/api/accounts','/api/vouchers','/api/account-balances'],scopeAccount,auth.requireRole('OPERATOR'));
 app.use((req,res,next)=>{
-  if(req.path.startsWith('/api/')||req.path==='/login.html'||req.path==='/login.js'||req.path==='/bbq-access.html'||/^\\/bbq-(?:admin|billing|kitchen)-login\\.html$/.test(req.path)||req.path==='/js/bbq-role-login.js'||req.path.startsWith('/css/')||req.path==='/manifest.webmanifest'||req.path==='/sw.js'||req.path.startsWith('/icons/'))return next();
+  if(req.path.startsWith('/api/')||req.path==='/login.html'||req.path==='/login.js'||req.path==='/bbq-access.html'||['/bbq-admin-login.html','/bbq-billing-login.html','/bbq-kitchen-login.html'].includes(req.path)||req.path==='/js/bbq-role-login.js'||req.path.startsWith('/css/')||req.path==='/manifest.webmanifest'||req.path==='/sw.js'||req.path.startsWith('/icons/'))return next();
   const token=(String(req.headers.cookie||'').match(/(?:^|; )hl_session=([a-f0-9]{64})/)||[])[1];
   if(!token)return res.redirect('/login.html');
   next();
@@ -49,7 +49,7 @@ for(const [url,required,file] of [
  ['/bbq-kitchen.html','KITCHEN','bbq-kitchen.html']
 ]){
  app.get(url,(req,res,next)=>{
-  if(!/(?:^|;\\s*)hl_session=[a-f0-9]{64}(?:;|$)/.test(String(req.headers.cookie||'')))return res.redirect('/bbq-'+(required==='OPERATOR'?'billing':required.toLowerCase())+'-login.html');
+  if(!/(?:^|;\s*)hl_session=[a-f0-9]{64}(?:;|$)/.test(String(req.headers.cookie||'')))return res.redirect('/bbq-'+(required==='OPERATOR'?'billing':required.toLowerCase())+'-login.html');
   return auth.requireAuth(req,res,next);
  },async(req,res,next)=>{
   try{
