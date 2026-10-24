@@ -6,6 +6,15 @@ function canPos(method,path,role){
  if(!['ADMIN','OPERATOR','KITCHEN'].includes(role))return false;
  if(method==='GET'&&path==='/pos/session')return true;
  if(method==='GET'&&path==='/pos/admin/daily-report')return role==='ADMIN';
+ if(method==='GET'&&path==='/pos/menu-stock')return role==='OPERATOR'||role==='ADMIN';
+ if(/^\/pos\/inventory(?:\/|$)/.test(path)){
+  if(role!=='ADMIN')return false;
+  if(method==='GET'&&['/pos/inventory/items','/pos/inventory/recipes','/pos/inventory/report'].includes(path))return true;
+  if(method==='POST'&&path==='/pos/inventory/items')return true;
+  if(method==='PUT'&&/^\/pos\/inventory\/menu\/\d+\/recipe$/.test(path))return true;
+  if(method==='POST'&&/^\/pos\/inventory\/items\/\d+\/(?:stock|count)$/.test(path))return true;
+  return false;
+ }
  if(method==='GET'&&path==='/pos/kitchen-orders')return role==='KITCHEN'||role==='ADMIN';
  if(method==='PATCH'&&/^\/pos\/orders\/\d+\/status$/.test(path))return role==='KITCHEN'||role==='ADMIN';
  if(role==='KITCHEN')return false;
