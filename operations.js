@@ -235,5 +235,6 @@ module.exports = function operations(pool, auth) {
   require('./pipes-sales')(router,pool);
   require('./pipes-sales-dispatch')(router,pool);
   require('./pipes-customer-billing')(router,pool);
+  require('./pipes-receivables')(router,pool);
   return router;
 };
