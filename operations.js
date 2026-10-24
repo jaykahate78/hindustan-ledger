@@ -198,10 +198,10 @@ module.exports = function operations(pool, auth) {
       await client.query('BEGIN');
       const id=await orgId(client,posOrg);
       let totalCents=0;const lines=[];
-      for(const item of items){
+      for(const item of [...items].sort((a,b)=>Number(a.menu_item_id)-Number(b.menu_item_id))){
         const qty=positive(item.quantity,'Item quantity');
         if(!Number.isInteger(qty)||qty>500) throw fail(400,'Item quantity must be an integer up to 500');
-        const menu=(await client.query('SELECT id,name,price FROM pos_menu_items WHERE organization_id=$1 AND id=$2 AND available',[id,item.menu_item_id])).rows[0];
+        const menu=(await client.query('SELECT id,name,price FROM pos_menu_items WHERE organization_id=$1 AND id=$2 AND available FOR SHARE',[id,item.menu_item_id])).rows[0];
         if(!menu) throw fail(400,'Menu item not found or unavailable');
         const lineCents=Math.round(Number(menu.price)*100)*qty;
         totalCents+=lineCents;lines.push({menu,qty,lineCents});
@@ -210,6 +210,7 @@ module.exports = function operations(pool, auth) {
       const no='POS-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
       const order=(await client.query('INSERT INTO pos_orders(organization_id,order_no,channel,table_label,subtotal,total_amount,payment_method,notes,payment_reference,payment_confirmed_at,cashier_user_id) VALUES($1,$2,$3,$4,$5,$5,$6,$7,$8,now(),$9) RETURNING *',[id,no,channel,String(req.body.table_label||'').slice(0,40),totalCents/100,method,String(req.body.notes||'').slice(0,500),paymentReference,req.user.id])).rows[0];
       for(const l of lines) await client.query('INSERT INTO pos_order_items(organization_id,order_id,menu_item_id,name_snapshot,quantity,unit_price,line_total) VALUES($1,$2,$3,$4,$5,$6,$7)',[id,order.id,l.menu.id,l.menu.name,l.qty,l.menu.price,l.lineCents/100]);
+      await require('./bbq-inventory').consume(client,id,order.id,lines,req.user.id);
       await client.query('COMMIT');res.status(201).json(order);
     }catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
   }));
@@ -222,6 +223,7 @@ module.exports = function operations(pool, auth) {
       const r=await client.query('SELECT * FROM pos_orders WHERE id=$1 AND organization_id=$2 FOR UPDATE',[req.params.id,id]);
       if(!r.rowCount) throw fail(404,'Order not found');
       if(!transitions[r.rows[0].status].includes(req.body.status)) throw fail(400,'Invalid order status transition');
+      if(req.body.status==='CANCELLED')await require('./bbq-inventory').handleCancellation(client,id,r.rows[0].id,r.rows[0].status,req.user.id);
       const out=await client.query(`UPDATE pos_orders SET status=$1,updated_at=NOW(),completed_at=CASE WHEN $1='COMPLETED' THEN NOW() ELSE completed_at END WHERE id=$2 AND organization_id=$3 RETURNING *`,[req.body.status,req.params.id,id]);
       await client.query('COMMIT');res.json(out.rows[0]);
     }catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
@@ -232,6 +234,7 @@ module.exports = function operations(pool, auth) {
   require('./pipes-procurement')(router,pool);
   require('./pipes-finance')(router,pool);
   require('./bbq-admin-report')(router,pool);
+  require('./bbq-inventory')(router,pool);
   require('./pos-billing')(router,pool);
   require('./pipes-sales')(router,pool);
   require('./pipes-sales-dispatch')(router,pool);
