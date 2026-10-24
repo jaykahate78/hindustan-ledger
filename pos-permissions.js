@@ -5,6 +5,7 @@ function canPos(method,path,role){
  if(role==='OWNER')return true;
  if(!['ADMIN','OPERATOR','KITCHEN'].includes(role))return false;
  if(method==='GET'&&path==='/pos/session')return true;
+ if(method==='GET'&&path==='/pos/admin/daily-report')return role==='ADMIN';
  if(method==='GET'&&path==='/pos/kitchen-orders')return role==='KITCHEN'||role==='ADMIN';
  if(method==='PATCH'&&/^\/pos\/orders\/\d+\/status$/.test(path))return role==='KITCHEN'||role==='ADMIN';
  if(role==='KITCHEN')return false;
@@ -18,6 +19,6 @@ function canPos(method,path,role){
  return false;
 }
 function posCapabilities(role){
- return {view:role==='KITCHEN'?'kitchen':'cashier',can_bill:['OWNER','ADMIN','OPERATOR'].includes(role),can_kitchen:['OWNER','ADMIN','KITCHEN'].includes(role),can_manage_menu:['OWNER','ADMIN'].includes(role)};
+ return {view:role==='KITCHEN'?'kitchen':role==='ADMIN'?'admin':'cashier',can_report:role==='OWNER'||role==='ADMIN',can_bill:['OWNER','ADMIN','OPERATOR'].includes(role),can_kitchen:['OWNER','ADMIN','KITCHEN'].includes(role),can_manage_menu:['OWNER','ADMIN'].includes(role)};
 }
 module.exports={canPos,posCapabilities};
