@@ -29,20 +29,27 @@ test('BBQ Admin can return to authorized Main Page without disabling direct role
  const script=/<script>([\s\S]*?)<\/script>/.exec(html)?.[1];
  assert.ok(script,'main workspace page has client role-routing logic');
  async function view(session,search=''){
-  const main={hidden:false},pipes={hidden:false},description={textContent:''};
+  const main={hidden:false},pipes={hidden:false},pipesActions={hidden:false},pipesRestricted={hidden:true},description={textContent:''};
   let redirected='';
-  const document={querySelector:()=>main,getElementById:id=>id==='pipesWorkspace'?pipes:description};
+  const elements={pipesWorkspace:pipes,pipesActions,pipesRestricted,workspaceDescription:description};
+  const document={querySelector:()=>main,getElementById:id=>elements[id]};
   const window={location:{search,replace(url){redirected=url}}};
   const fetch=async()=>({ok:true,json:async()=>session});
   await vm.runInNewContext(script,{window,document,fetch,URLSearchParams,console});
-  return {redirected,main,pipes,description};
+  return {redirected,main,pipes,pipesActions,pipesRestricted,description};
  }
- const admin={destination:'/bbq-admin.html',workspace:'bbq',role:'ADMIN'};
+ const admin={destination:'/bbq-admin.html',workspace:'bbq',role:'ADMIN',canAccessPipes:false};
  const returned=await view(admin,'?view=home');
  assert.equal(returned.redirected,'','explicit Main Page link must not bounce to admin');
  assert.equal(returned.main.hidden,false);
- assert.equal(returned.pipes.hidden,true,'unauthorized factory workspace must not appear for BBQ admin');
- assert.match(returned.description.textContent,/authorized business workspace/);
+ assert.equal(returned.pipes.hidden,false,'both business cards should be visible on Main Page');
+ assert.equal(returned.pipesActions.hidden,true,'unauthorized BBQ admin cannot open Pipes links');
+ assert.equal(returned.pipesRestricted.hidden,false,'explain how to switch to a Pipes-authorized login');
+ assert.match(returned.description.textContent,/assigned login permissions/);
+ const sharedAdmin=await view({...admin,canAccessPipes:true},'?view=home');
+ assert.equal(sharedAdmin.pipes.hidden,false);
+ assert.equal(sharedAdmin.pipesActions.hidden,false,'multi-business admin can open Pipes');
+ assert.equal(sharedAdmin.pipesRestricted.hidden,true);
  const fresh=await view(admin);
  assert.equal(fresh.redirected,'/bbq-admin.html','ordinary login keeps auto-redirect');
  const kitchen=await view({destination:'/bbq-kitchen.html',workspace:'bbq',role:'KITCHEN'},'?view=home');
@@ -51,4 +58,5 @@ test('BBQ Admin can return to authorized Main Page without disabling direct role
  assert.equal(owner.redirected,'');
  assert.equal(owner.main.hidden,false);
  assert.equal(owner.pipes.hidden,false,'group owner retains two business cards');
+ assert.equal(owner.pipesActions.hidden,false,'group owner can open Pipes');
 });
