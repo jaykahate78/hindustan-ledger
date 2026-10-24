@@ -49,7 +49,9 @@ test('one login authenticates distinct BBQ roles and redirects by server-assigne
    assert.equal(route.status,200,u.username);
    const data=await route.json();
    assert.equal(data.destination,u.destination,u.username);
-   if(u.role==='ADMIN')assert.equal(data.workspace,'bbq');
+   if(u.role==='ADMIN'){assert.equal(data.workspace,'bbq');assert.equal(data.canAccessPipes,false)}
+   if(u.is_owner||u.role==='PIPES')assert.equal(data.canAccessPipes,true);
+   if(u.role==='OPERATOR'||u.role==='KITCHEN')assert.equal(data.canAccessPipes,false);
    if(u.role==='OPERATOR'||u.role==='KITCHEN')assert.notEqual(data.destination,'/bbq-admin.html');
   }
  }finally{await new Promise(resolve=>server.close(resolve))}
