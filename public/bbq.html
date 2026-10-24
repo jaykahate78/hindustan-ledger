@@ -18,7 +18,7 @@ button.secondary{background:#edf3ff;color:#102a56}button:disabled{opacity:.45;cu
 #notice{display:none;padding:13px;border-radius:9px;background:#e3f3ee;color:#146a4b;margin-bottom:15px}#notice.error{background:#fff0f0;color:#9e2424}
 .success{padding:16px;background:#ebf9f3;border:1px solid #b7ebd1;border-radius:12px;margin-top:15px}.success h3{margin:0 0 6px;color:#146b48}.success p{margin:4px 0}
 footer{font-size:12px;color:#65788f;margin:17px 0}@media(max-width:860px){.split{grid-template-columns:1fr}.row{grid-template-columns:1fr}}
-</style></head><body><header><div><h1>BBQ Pav Bhaji — Billing</h1><p>Choose items · Collect payment · Send to kitchen</p></div><a href="/bbq-access.html">← Staff login options</a><button type="button" id="logout">Sign out</button></header>
+</style></head><body><header><div><h1>BBQ Pav Bhaji — Billing</h1><p>Choose items · Collect payment · Send to kitchen</p></div><button type="button" id="logout">Sign out</button></header>
 <main><div id="notice" role="status" aria-live="polite"></div><div class="split">
 <section class="card"><h2>1. Select Items</h2><div class="row"><div><label for="orderChannel">Order Type</label><select id="orderChannel"><option value="DINE_IN">Dine In</option><option value="TAKEAWAY">Takeaway</option><option value="ONLINE_MANUAL">Online (manual)</option></select></div><div><label for="tableLabel">Table / Order Name</label><input id="tableLabel" maxlength="40" placeholder="Table 4"></div></div>
 <label for="dishSearch">Find Dish</label><input id="dishSearch" autocomplete="off" placeholder="Search items…"><div id="categoryFilters" class="filters"></div><div id="quickDishes" class="dishes"></div><p class="hint">Tap a dish to add it to the cart.</p></section>
