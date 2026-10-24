@@ -43,10 +43,13 @@ app.use(['/api/accounts','/api/vouchers','/api/account-balances'],scopeAccount,a
     return next();
   }catch(err){next(err)}
 },auth.requireRole('OPERATOR'));
+// All old BBQ entry links lead to the same canonical role-based sign-in.
+app.get(['/bbq-access.html','/bbq-admin-login.html','/bbq-billing-login.html','/bbq-kitchen-login.html'],
+ (req,res)=>res.redirect(302,'/login.html'));
 app.use((req,res,next)=>{
   if(req.path.startsWith('/api/')||req.path==='/login.html'||req.path==='/login.js'||req.path==='/bbq-access.html'||['/bbq-admin.html','/bbq.html','/bbq-kitchen.html'].includes(req.path)||['/bbq-admin-login.html','/bbq-billing-login.html','/bbq-kitchen-login.html'].includes(req.path)||req.path==='/js/bbq-role-login.js'||req.path.startsWith('/css/')||req.path==='/manifest.webmanifest'||req.path==='/sw.js'||req.path.startsWith('/icons/'))return next();
   const token=(String(req.headers.cookie||'').match(/(?:^|; )hl_session=([a-f0-9]{64})/)||[])[1];
-  if(!token)return res.redirect(req.path==='/accounting.html'&&req.query.company==='bbq'?'/bbq-admin-login.html':'/login.html');
+  if(!token)return res.redirect('/login.html');
   next();
 });
 // Server-enforced BBQ screen separation; changing a URL cannot change staff permissions.
@@ -56,13 +59,13 @@ for(const [url,required,file] of [
  ['/bbq-kitchen.html','KITCHEN','bbq-kitchen.html']
 ]){
  app.get(url,(req,res,next)=>{
-  if(!/(?:^|;\s*)hl_session=[a-f0-9]{64}(?:;|$)/.test(String(req.headers.cookie||'')))return res.redirect('/bbq-'+(required==='OPERATOR'?'billing':required.toLowerCase())+'-login.html');
+  if(!/(?:^|;\s*)hl_session=[a-f0-9]{64}(?:;|$)/.test(String(req.headers.cookie||'')))return res.redirect('/login.html');
   return auth.requireAuth(req,res,next);
  },async(req,res,next)=>{
   try{
    if(req.user.is_owner)return res.sendFile(path.join(__dirname,'public',file));
    const q=await pool.query("SELECT r.role FROM app_user_roles r JOIN organizations o ON o.id=r.organization_id WHERE r.user_id=$1 AND o.name='BBQ Pav Bhaji Chain'",[req.user.id]);
-   if(!q.rowCount||q.rows[0].role!==required)return res.status(403).send('Wrong role. Use the correct BBQ staff login.');
+   if(!q.rowCount||q.rows[0].role!==required)return res.status(403).send('Access denied: your assigned BBQ role cannot open this dashboard.');
    res.sendFile(path.join(__dirname,'public',file));
   }catch(e){next(e)}
  });
