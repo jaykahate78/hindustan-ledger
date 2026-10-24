@@ -66,6 +66,20 @@ function createAuth(pool){
   if(req.user?.is_owner||roles[req.orgRole]>=roles[required])return next();
   res.status(403).json({error:'Insufficient permissions'});
  }}
+ // Server-derived landing keeps role routing authoritative; no client-selected staff role.
+ router.get('/landing',requireAuth,wrap(async(req,res)=>{
+  if(req.user.is_owner)return res.json({destination:'/',workspace:'group',role:'OWNER'});
+  const rolesForUser=await pool.query(
+   'SELECT o.name,r.role FROM app_user_roles r JOIN organizations o ON o.id=r.organization_id WHERE r.user_id=$1',
+   [req.user.id]
+  );
+  const bbq=rolesForUser.rows.find(r=>r.name==='BBQ Pav Bhaji Chain');
+  const destinations={ADMIN:'/bbq-admin.html',OPERATOR:'/bbq.html',KITCHEN:'/bbq-kitchen.html'};
+  if(bbq&&Object.prototype.hasOwnProperty.call(destinations,bbq.role)){
+   return res.json({destination:destinations[bbq.role],workspace:'bbq',role:bbq.role});
+  }
+  return res.json({destination:'/',workspace:'group',role:null});
+ }));
  router.get('/me',requireAuth,wrap(async(req,res)=>{
   const r=await pool.query('SELECT organization_id,role FROM app_user_roles WHERE user_id=$1',[req.user.id]);
   res.json({username:req.user.username,is_owner:req.user.is_owner,roles:r.rows});
